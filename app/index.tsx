@@ -1,15 +1,10 @@
-import { Text, View } from "react-native";
+import { ScrollView, Text } from "react-native";
+import { globalStyles } from "./styles/globalStyles";
 
 export default function Index() {
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>Hello and welcome to Safe Trade 🙈</Text>
-    </View>
+    <ScrollView style={globalStyles.container}>
+      <Text style={globalStyles.text}>Hello and welcome to Safe Trade 🙈</Text>
+    </ScrollView>
   );
 }
