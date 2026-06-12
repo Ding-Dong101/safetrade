@@ -1,220 +1,97 @@
-\# ⚙️ Customer Management API Backend
+# 🛡️ SafeTrade Backend Services
 
+> The backend infrastructure for SafeTrade, a peer-to-peer campus trading and escrow application. Built using a microservices architecture to ensure secure, trustless physical handoffs through dynamic OTPs and automated state management.
 
+---
 
-!\[Version](https://img.shields.io/badge/version-1.0.0-blue)
+## 🏗️ Technology Stack
 
-!\[Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+* **Framework:** Spring Boot (Java/Kotlin)
+* **Database:** PostgreSQL
+* **Communication:** REST APIs (via API Gateway)
+* **Authentication:** JWT-based authentication (Simplified)
+* **Task Scheduling:** Spring Boot `@Scheduled`
 
-!\[Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)
+---
 
-!\[License](https://img.shields.io/badge/license-MIT-blue)
+## 🧩 Microservices Architecture
 
+To separate concerns and maintain scalability, the backend is split into the following core components:
 
+### 1. API Gateway
+* Acts as the single entry point for the Expo mobile app.
+* Forwards requests to the appropriate microservice.
+* Centralizes authentication, routing, and logging.
 
-> A robust, scalable, and secure backend RESTful API service for managing customer profiles and related operational data.
+### 2. User Service
+* Manages user profiles, registration, and login.
+* Generates and validates JWT tokens.
+* Tracks rider verification statuses.
 
+### 3. Trade Service
+* Handles the creation of trades and listing of items.
+* Matches buyers and sellers.
+* Writes initial trade records to the database.
 
+### 4. Escrow Service (Core Logic)
+* Tracks the exact state of each transaction.
+* Generates dynamic OTP codes (Three-Way Handshake) for physical handoffs.
+* Enforces delivery and collection timers.
+* Simulates the holding and releasing of funds.
 
-\---
+### 5. Notification Service
+* Mock service for the prototype.
+* Logs messages to the console when transaction statuses change (e.g., "Payment released to seller").
 
+---
 
+## 🗄️ Database Schema
 
-\## 📑 Table of Contents
+All services read and write to a centralized PostgreSQL database. 
 
-
-
-\- \[Project Overview](#-project-overview)
-
-\- \[System Requirements](#-system-requirements)
-
-\- \[Development Tasks \& Roadmap](#-development-tasks--roadmap)
-
-\- \[Tech Stack](#-tech-stack)
-
-\- \[Getting Started](#-getting-started)
-
-
-
-\---
-
-
-
-\## 🎯 Project Overview
-
-
-
-This backend service provides the core infrastructure for the Customer Management System. It handles data persistence, business logic, user authentication, and serves data to the frontend application via optimized API endpoints. 
-
-
-
-\---
-
-
-
-\## 📋 System Requirements
-
-
-
-The backend must fulfill the following functional requirements to ensure complete customer lifecycle management:
-
-
-
-\### 1. Customer Data Management (CRUD)
-
-\* \*\*Requirement 1.1 - Add Customers:\*\* Create a new customer profile with required fields (Name, Email, Phone, Address) and validate input data.
-
-\* \*\*Requirement 1.2 - Get Customers:\*\* Retrieve a list of all customers. Must include pagination, sorting (e.g., by date added), and filtering (e.g., by active status).
-
-\* \*\*Requirement 1.3 - Get Single Customer:\*\* Fetch detailed information for a specific customer using their unique ID.
-
-\* \*\*Requirement 1.4 - Update Customers:\*\* Modify existing customer records. Must support partial updates (PATCH) and full updates (PUT).
-
-\* \*\*Requirement 1.5 - Delete Customers:\*\* Soft-delete a customer record (mark as inactive) to maintain data integrity and audit trails.
-
-
-
-\### 2. Security \& Authentication
-
-\* \*\*Requirement 2.1 - API Protection:\*\* All customer endpoints must be secured using JWT (JSON Web Tokens).
-
-\* \*\*Requirement 2.2 - Role-Based Access:\*\* Only authorized administrative users can delete or permanently modify customer records.
-
-
-
-\---
-
-
-
-\## 🚀 Development Tasks \& Roadmap
-
-
-
-Below is the detailed breakdown of tasks required to complete this backend service. 
-
-
-
-\### Phase 1: Project Initialization \& Setup
-
-\- \[x] Initialize Git repository and setup branch protection rules.
-
-\- \[x] Configure the base project structure (e.g., routing, controllers, services).
-
-\- \[ ] Set up environment variables (`.env`) for database connections and API keys.
-
-\- \[ ] Configure global error handling and logging (e.g., Winston/Morgan).
-
-
-
-\### Phase 2: Database Design \& Modeling
-
-\- \[ ] Design the ERD (Entity Relationship Diagram) for the Customer schema.
-
-\- \[ ] Write database migration scripts for the `customers` table.
-
-\- \[ ] Create the Customer data model with the following constraints:
-
-&#x20; - `email`: unique, valid email format.
-
-&#x20; - `phone`: sanitized string.
-
-&#x20; - `status`: enum (`ACTIVE`, `INACTIVE`, `SUSPENDED`).
-
-\- \[ ] Seed the database with 50 mock customer records for testing.
-
-
-
-\### Phase 3: Core API Endpoints Implementation
-
-\- \[ ] \*\*POST `/api/v1/customers`\*\*
-
-&#x20; - \[ ] Implement input validation middleware.
-
-&#x20; - \[ ] Write controller logic to save the new customer to the database.
-
-\- \[ ] \*\*GET `/api/v1/customers`\*\*
-
-&#x20; - \[ ] Implement pagination (query params: `?page=1\&limit=10`).
-
-&#x20; - \[ ] Implement search/filtering logic.
-
-\- \[ ] \*\*GET `/api/v1/customers/:id`\*\*
-
-&#x20; - \[ ] Implement 404 error handling if the ID does not exist.
-
-\- \[ ] \*\*PUT/PATCH `/api/v1/customers/:id`\*\*
-
-&#x20; - \[ ] Ensure `updated\_at` timestamp triggers correctly.
-
-\- \[ ] \*\*DELETE `/api/v1/customers/:id`\*\*
-
-&#x20; - \[ ] Implement soft-delete logic.
-
-
-
-\### Phase 4: Security \& Testing
-
-\- \[ ] Implement JWT authentication middleware.
-
-\- \[ ] Write Unit Tests for all controller functions.
-
-\- \[ ] Write Integration Tests for the API endpoints using a test database.
-
-\- \[ ] Set up a CI/CD pipeline to run tests automatically on Pull Requests.
-
-\- \[ ] Generate API documentation using Swagger/OpenAPI.
-
-
-
-\---
-
-
-
-\## 💻 Tech Stack
-
-
-
-| Category | Technology |
-
+| Table | Columns |
 | :--- | :--- |
+| **`users`** | `id`, `name`, `email`, `password_hash`, `role` |
+| **`trades`** | `id`, `item_name`, `price`, `buyer_id`, `seller_id` |
+| **`escrow_states`** | `trade_id`, `status`, `dispatch_code`, `dropoff_code`, `release_code`, `timer_deadline`, `created_at`, `updated_at` |
 
-| \*\*Runtime\*\* | Node.js / Python |
+---
 
-| \*\*Framework\*\* | Express.js / FastAPI |
+## 🔄 Escrow State Machine
 
-| \*\*Database\*\* | PostgreSQL |
+The Escrow Service manages the lifecycle of a trade through the following strictly enforced states:
 
-| \*\*ORM/Query Builder\*\* | Prisma / SQLAlchemy |
+| State | Trigger / Action Required |
+| :--- | :--- |
+| **`PENDING`** | Trade is successfully created by the buyer. |
+| **`FUNDED`** | Buyer deposits funds (Simulated). |
+| **`PHOTO_VERIFIED`** | Seller submits a live photo. Dispatch code (CODE #1) generated. |
+| **`IN_TRANSIT`** | Rider inputs CODE #1. Liability transfers to rider. **24-hour timer begins.** |
+| **`AT_POST`** | Rider inputs CODE #2 at Campus Post. Liability clears. **72-hour timer begins.** |
+| **`RELEASED`** | Post operator inputs CODE #3 (Buyer confirmation). |
+| **`CLOSED`** | Transaction complete. Funds released to seller. |
 
-| \*\*Testing\*\* | Jest / PyTest |
+---
 
-| \*\*Documentation\*\*| Swagger UI |
+## ⏱️ Automated Timer Escalation Logic
 
+The backend utilizes Spring Boot `@Scheduled` tasks to periodically check the `timer_deadline` on active trades:
 
+* **24-Hour Rider Limit:** If a rider fails to deliver an `IN_TRANSIT` item within 24 hours, the trade is flagged, funds are frozen, and parties are notified.
+* **72-Hour Buyer Limit:** If a buyer fails to collect an `AT_POST` item within 72 hours, the trade is flagged, funds are frozen, and parties are notified.
 
-\---
+---
 
+## 📋 Backend Development Tasks
 
-
-\## 🛠️ Getting Started
-
-
-
-\### Prerequisites
-
-\* Node.js (v18+) or Python (3.10+)
-
-\* PostgreSQL installed and running locally
-
-
-
-\### Installation
-
-
-
-1\. Clone the repository:
-
-&#x20;  ```bash
-
-&#x20;  git clone \[https://github.com/your-org/customer-backend.git](https://github.com/your-org/customer-backend.git)
-
+- [ ] **Setup & Config:** Initialize Spring Boot application, configure PostgreSQL connection, and set up API Gateway routing.
+- [ ] **Database Setup:** Create tables (`users`, `trades`, `escrow_states`) using JPA/Hibernate or SQL migration scripts.
+- [ ] **User Service:** Implement user registration, login endpoints, and JWT generation/validation.
+- [ ] **Trade Service:** Implement `POST /trades` endpoint to create a trade and trigger the Escrow service to create a `PENDING` record.
+- [ ] **Escrow Service - Funding:** Implement `POST /escrow/fund/{trade_id}` to simulate funding (`FUNDED`).
+- [ ] **Escrow Service - OTP Generation:** Build the logic to generate secure, dynamic OTP codes for dispatch, dropoff, and release.
+- [ ] **Escrow Service - Handshake Endpoints:** - [ ] `POST /escrow/transit/{trade_id}` (Verifies CODE #1)
+  - [ ] `POST /escrow/dropoff/{trade_id}` (Verifies CODE #2)
+  - [ ] `POST /escrow/release/{trade_id}` (Verifies CODE #3)
+- [ ] **Scheduling Tasks:** Implement `@Scheduled` cron jobs to sweep the database for expired 24-hour and 72-hour deadlines.
+- [ ] **Notification Mocking:** Set up a basic service to log state changes locally for debugging.
