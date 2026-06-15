@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "safetrade",
-    "slug": "safetrade",
+    "name": "RNCC",
+    "slug": "RNCC",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "safetrade",
+    "scheme": "rncc",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
