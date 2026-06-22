@@ -2,10 +2,10 @@ import { icons } from "./icons";
 
 export const tabs = [
     { name: "home", title: "Home", icon: icons.home },
-    { name: "new", title: "New", icon: icons.trade },
+   
     { name: "history", title: "History", icon: icons.history },
-    { name: "notifications", title: "Alerts", icon: icons.bell },
-    { name: "profile", title: "Profile", icon: icons.profile },
+    
+    
 ];
 
 export const TRADE_STATUSES = [
