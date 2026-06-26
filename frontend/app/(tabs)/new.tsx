@@ -1,10 +1,12 @@
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, Alert } from "react-native";
 import { colors, spacing } from "@/constants/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState } from "react";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { useRouter } from "expo-router";
+import { createTrade } from "@/services/tradeService";
+import { getUserByUsername } from "@/services/authService";
 
 export default function New() {
     const insets = useSafeAreaInsets();
@@ -16,13 +18,45 @@ export default function New() {
     const [isLoading, setIsLoading] = useState(false);
 
     const handleCreate = async () => {
-        if (!sellerUsername || !amount) return;
+        if (!sellerUsername.trim() || !amount.trim()) {
+            Alert.alert("Error", "Please fill in seller's username and deposit amount");
+            return;
+        }
+
+        const priceNum = parseFloat(amount);
+        if (isNaN(priceNum) || priceNum <= 0) {
+            Alert.alert("Error", "Please enter a valid deposit amount");
+            return;
+        }
+
         setIsLoading(true);
-        // Will connect to backend later
-        setTimeout(() => {
-            setIsLoading(false);
+        try {
+            // 1. Resolve seller's username to UUID
+            const seller = await getUserByUsername(sellerUsername.trim());
+            if (!seller || !seller.id) {
+                Alert.alert("Error", "Seller username not found in SafeTrade system");
+                setIsLoading(false);
+                return;
+            }
+
+            // 2. Call backend to create trade
+            await createTrade({
+                title: `Trade for ${comments.slice(0, 30) || 'Escrow Transaction'}`,
+                description: comments.trim() || "SafeTrade escrow deposit",
+                price: priceNum,
+                sellerId: seller.id,
+            });
+
+            Alert.alert("Success", "Trade created successfully!");
+            setSellerUsername("");
+            setAmount("");
+            setComments("");
             router.push("/(tabs)/home" as any);
-        }, 1000);
+        } catch (err: any) {
+            Alert.alert("Error", err?.response?.data?.message ?? "Failed to create trade");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -69,8 +103,9 @@ export default function New() {
             >
                 <Text
                     style={{
-                        color: colors.muted,
+                        color: colors.primary,
                         fontSize: 13,
+                        fontWeight: "600",
                         marginBottom: spacing[2],
                     }}
                 >
@@ -94,19 +129,30 @@ export default function New() {
                 />
 
                 <Input
-                    label="Comments (optional)"
-                    placeholder="Add any notes about the trade"
+                    label="Comments / Description"
+                    placeholder="Add notes about item description and terms"
                     value={comments}
                     onChangeText={setComments}
                     multiline
                     numberOfLines={4}
+                    style={{
+                        height: 80,
+                    }}
                 />
 
                 <Button
-                    label="Create & Deposit Funds"
+                    label="Create & Init Escrow"
                     onPress={handleCreate}
                     isLoading={isLoading}
-                    style={{ marginTop: spacing[2] }}
+                    style={{
+                        backgroundColor: colors.primary,
+                        marginTop: spacing[4],
+                        borderRadius: 12,
+                    }}
+                    textStyle={{
+                        color: "#000",
+                        fontWeight: "700",
+                    }}
                 />
             </View>
         </ScrollView>

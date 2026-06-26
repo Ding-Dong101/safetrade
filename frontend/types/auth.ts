@@ -29,4 +29,4 @@ export interface AuthResponse {
     token: string;
 }
 
-export type Role = "buyer" | "seller" | "rider";
+export type Role = "buyer" | "seller" | "rider" | "post";

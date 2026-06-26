@@ -24,16 +24,19 @@ const Input = ({ label, error, containerStyle, ...props }: InputProps) => {
             )}
             <TextInput
                 placeholderTextColor={colors.mutedForeground}
-                style={{
-                    backgroundColor: colors.card,
-                    color: colors.foreground,
-                    borderRadius: 8,
-                    paddingVertical: 12,
-                    paddingHorizontal: 16,
-                    fontSize: 15,
-                    borderWidth: 1,
-                    borderColor: error ? colors.danger : colors.border,
-                }}
+                style={[
+                    {
+                        backgroundColor: colors.card,
+                        color: colors.foreground,
+                        borderRadius: 8,
+                        paddingVertical: 12,
+                        paddingHorizontal: 16,
+                        fontSize: 15,
+                        borderWidth: 1,
+                        borderColor: error ? colors.danger : colors.border,
+                    },
+                    props.style,
+                ]}
                 {...props}
             />
             {error && (

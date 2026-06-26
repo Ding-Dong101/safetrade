@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.UUID;
 
 public interface TradesRepository extends JpaRepository<Trades, UUID> {
+    java.util.List<Trades> findByBuyerId(String buyerId);
+    java.util.List<Trades> findBySellerId(String sellerId);
 }

@@ -2,17 +2,21 @@ import { TradeStatus } from "@/types/trade";
 import { EscrowStatus } from "@/types/escrow";
 import { JobStatus } from "@/types/rider";
 
-export const formatTradeStatus = (status: TradeStatus): string => {
-    const labels: Record<TradeStatus, string> = {
+export const formatTradeStatus = (status: string): string => {
+    const lower = status?.toLowerCase() ?? "";
+    const labels: Record<string, string> = {
         pending: "Pending",
         funded: "Funded",
         photo_verified: "Photo Verified",
+        dispatch_pending: "Photo Verified",
         in_transit: "In Transit",
         at_post: "At Post",
+        delivered: "At Post",
         released: "Released",
         closed: "Closed",
+        refunded: "Refunded",
     };
-    return labels[status] ?? "Unknown";
+    return labels[lower] ?? formatStatusLabel(status);
 };
 
 export const formatEscrowStatus = (status: EscrowStatus): string => {

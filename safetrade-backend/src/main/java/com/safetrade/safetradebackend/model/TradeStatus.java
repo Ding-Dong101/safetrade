@@ -8,5 +8,7 @@ public enum TradeStatus {
     AT_POST,
     RELEASED,
     PENDING,
+    DELIVERED,
+    CLOSED,
+    REFUNDED,
 }
-

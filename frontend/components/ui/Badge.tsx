@@ -22,19 +22,23 @@ const variantColors: Record<BadgeVariant, { bg: string; text: string }> = {
     muted: { bg: colors.card, text: colors.muted },
 };
 
-const statusVariantMap: Record<TradeStatus, BadgeVariant> = {
+const statusVariantMap: Record<string, BadgeVariant> = {
     pending: "warning",
     funded: "success",
     photo_verified: "info",
+    dispatch_pending: "info",
     in_transit: "info",
     at_post: "purple",
     released: "primary",
     closed: "muted",
+    delivered: "purple",
+    refunded: "danger",
 };
 
 const Badge = ({ label, status, variant, style }: BadgeProps) => {
-    const resolvedVariant = variant ?? (status ? statusVariantMap[status] : "muted");
-    const resolvedLabel = label ?? (status ? formatTradeStatus(status) : "");
+    const normalizedStatus = status ? status.toLowerCase() : "";
+    const resolvedVariant = variant ?? (status ? (statusVariantMap[normalizedStatus] ?? "muted") : "muted");
+    const resolvedLabel = label ?? (status ? formatTradeStatus(status as any) : "");
     const { bg, text } = variantColors[resolvedVariant];
 
     return (

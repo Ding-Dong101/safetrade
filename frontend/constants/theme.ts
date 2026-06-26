@@ -1,18 +1,18 @@
 export const colors = {
-    background: "#0d0d0d",
-    card: "#1a1a1a",
-    cardAlt: "#222222",
+    background: "#0b0e14",
+    card: "#161b22",
+    cardAlt: "#21262d",
     foreground: "#ffffff",
     muted: "rgba(255,255,255,0.5)",
     mutedForeground: "rgba(255,255,255,0.3)",
     primary: "#00e676",
-    accent: "#00bcd4",
+    accent: "#ff9800",
     warning: "#f5c542",
     danger: "#dc2626",
     success: "#16a34a",
     info: "#3b82f6",
     purple: "#7c3aed",
-    border: "rgba(255,255,255,0.1)",
+    border: "rgba(255,255,255,0.08)",
 } as const;
 
 export const spacing = {

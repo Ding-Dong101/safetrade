@@ -24,9 +24,10 @@ export interface Trade {
 }
 
 export interface CreateTradePayload {
-    sellerUsername: string;
-    depositAmount: number;
-    comments?: string;
+    title: string;
+    description?: string;
+    price: number;
+    sellerId: string;
 }
 
 export interface UpdateTradeStatusPayload {

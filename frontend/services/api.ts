@@ -1,4 +1,5 @@
 import axios from "axios";
+import { useAuthStore } from "../store/authStore";
 
 const BASE_URL = "http://localhost:8080/api";
 
@@ -13,7 +14,10 @@ const api = axios.create({
 // Attach token to every request automatically
 api.interceptors.request.use(
     (config) => {
-        // Token will be injected here from authStore later
+        const token = useAuthStore.getState().token;
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
         return config;
     },
     (error) => Promise.reject(error)

@@ -14,8 +14,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@CrossOrigin
 @RestController
-@RequestMapping("/api/v2/trades")
+@RequestMapping({"/api/v2/trades", "/api/trades"})
 public class TradesController {
 
     private final TradesRepository tradesRepository;
@@ -28,9 +29,28 @@ public class TradesController {
         this.escrowService = escrowService;
     }
 
-    // Get all trades
+    // Get all trades or filter by authenticated user and role
     @GetMapping("/")
-    public List<Trades> getAll() {
+    public List<Trades> getAll(@RequestHeader(value = "Authorization", required = false) String authHeader,
+                               @RequestParam(value = "role", required = false) String role) {
+        String userId = null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            userId = authHeader.substring(7).trim();
+        }
+
+        if (userId != null) {
+            if ("buyer".equalsIgnoreCase(role)) {
+                return tradesRepository.findByBuyerId(userId);
+            } else if ("seller".equalsIgnoreCase(role)) {
+                return tradesRepository.findBySellerId(userId);
+            } else {
+                java.util.List<Trades> bought = tradesRepository.findByBuyerId(userId);
+                java.util.List<Trades> sold = tradesRepository.findBySellerId(userId);
+                java.util.List<Trades> all = new java.util.ArrayList<>(bought);
+                all.addAll(sold);
+                return all;
+            }
+        }
         return tradesRepository.findAll();
     }
 
@@ -42,26 +62,35 @@ public class TradesController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Create Trade (Stage 1: CREATED)
+    // Create Trade (Stage 1: PENDING)
     @PostMapping("/")
-    public ResponseEntity<?> create(@RequestBody Trades request) {
-        if (request.getTitle() == null || request.getPrice() == null ||
-                request.getBuyerId() == null || request.getSellerId() == null) {
-            return ResponseEntity.badRequest().body("title, price, buyerId, and sellerId are required");
+    public ResponseEntity<?> create(@RequestBody Trades request,
+                                    @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (request.getTitle() == null || request.getPrice() == null || request.getSellerId() == null) {
+            return ResponseEntity.badRequest().body("title, price, and sellerId are required");
+        }
+
+        String buyerId = request.getBuyerId();
+        if (buyerId == null && authHeader != null && authHeader.startsWith("Bearer ")) {
+            buyerId = authHeader.substring(7).trim();
+        }
+
+        if (buyerId == null) {
+            return ResponseEntity.badRequest().body("buyerId is required (either in request body or as Bearer token in Authorization header)");
         }
 
         Trades trade = Trades.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .price(request.getPrice())
-                .buyerId(request.getBuyerId())
+                .buyerId(buyerId)
                 .sellerId(request.getSellerId())
-                .status(TradeStatus.CREATED)
+                .status(TradeStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .build();
 
         Trades saved = tradesRepository.save(trade);
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.status(201).body(saved);
     }
 
     // Buyer Deposits Funds (Stage 2: FUNDED)
@@ -73,8 +102,8 @@ public class TradesController {
         }
 
         Trades trade = optionalTrade.get();
-        if (trade.getStatus() != TradeStatus.CREATED) {
-            return ResponseEntity.badRequest().body("Trade is not in CREATED status");
+        if (trade.getStatus() != TradeStatus.CREATED && trade.getStatus() != TradeStatus.PENDING) {
+            return ResponseEntity.badRequest().body("Trade is not in CREATED or PENDING status");
         }
 
         // Call Escrow Service to hold funds

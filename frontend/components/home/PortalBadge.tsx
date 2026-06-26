@@ -10,6 +10,7 @@ const roleConfig: Record<Role, { label: string; color: string }> = {
     buyer: { label: "Buyer Portal", color: colors.info },
     seller: { label: "Seller Portal", color: colors.purple },
     rider: { label: "Rider Portal", color: colors.primary },
+    post: { label: "Post Portal", color: colors.accent },
 };
 
 const PortalBadge = ({ role }: PortalBadgeProps) => {

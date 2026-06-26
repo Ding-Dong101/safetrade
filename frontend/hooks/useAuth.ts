@@ -25,8 +25,7 @@ export const useAuth = () => {
     const handleRegister = async (credentials: RegisterCredentials) => {
         try {
             setLoading(true);
-            const response = await register(credentials);
-            setUser(response.user, response.token);
+            await register(credentials);
             return { success: true };
         } catch (error: any) {
             return {

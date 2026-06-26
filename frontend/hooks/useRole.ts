@@ -2,7 +2,7 @@ import { useRoleStore } from "@/store/roleStore";
 import { Role } from "@/types/auth";
 
 export const useRole = () => {
-    const { activeRole, setRole, isBuyer, isSeller, isRider } = useRoleStore();
+    const { activeRole, setRole, isBuyer, isSeller, isRider, isPost } = useRoleStore();
 
     const switchRole = (role: Role) => {
         setRole(role);
@@ -14,5 +14,6 @@ export const useRole = () => {
         isBuyer: isBuyer(),
         isSeller: isSeller(),
         isRider: isRider(),
+        isPost: isPost(),
     };
 };

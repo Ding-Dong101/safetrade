@@ -7,7 +7,15 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
 };
 
 export const register = async (credentials: RegisterCredentials): Promise<AuthResponse> => {
-    const response = await api.post("/auth/register", credentials);
+    const payload = {
+        username: credentials.username,
+        email: credentials.email,
+        password: credentials.password,
+        firstname: credentials.firstName,
+        lastname: credentials.lastName,
+        phone: credentials.phone
+    };
+    const response = await api.post("/auth/register", payload);
     return response.data;
 };
 
@@ -17,5 +25,10 @@ export const logout = async (): Promise<void> => {
 
 export const refreshToken = async (token: string): Promise<AuthResponse> => {
     const response = await api.post("/auth/refresh", { token });
+    return response.data;
+};
+
+export const getUserByUsername = async (username: string): Promise<any> => {
+    const response = await api.get(`/users/get/username/${username}`);
     return response.data;
 };

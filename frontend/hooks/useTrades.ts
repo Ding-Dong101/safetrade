@@ -1,19 +1,18 @@
 import { useEffect } from "react";
 import { useTradeStore } from "@/store/tradeStore";
 import { getTrades, getTradeById } from "@/services/tradeService";
-import { MOCK_TRADES } from "@/constants/data";
+import { useRoleStore } from "@/store/roleStore";
 
 export const useTrades = () => {
     const { trades, selectedTrade, isLoading, error, setTrades, setSelectedTrade, setLoading, setError } =
         useTradeStore();
+    const { activeRole } = useRoleStore();
 
     const fetchTrades = async () => {
         try {
             setLoading(true);
             setError(null);
-            // Swap MOCK_TRADES for getTrades() when backend is ready
-            // const data = await getTrades();
-            const data = MOCK_TRADES as any;
+            const data = await getTrades(activeRole);
             setTrades(data);
         } catch (err: any) {
             setError(err?.response?.data?.message ?? "Failed to fetch trades");
@@ -26,8 +25,7 @@ export const useTrades = () => {
         try {
             setLoading(true);
             setError(null);
-            // const data = await getTradeById(id);
-            const data = MOCK_TRADES.find((t) => t.id === id) as any;
+            const data = await getTradeById(id);
             setSelectedTrade(data ?? null);
         } catch (err: any) {
             setError(err?.response?.data?.message ?? "Failed to fetch trade");
@@ -38,7 +36,7 @@ export const useTrades = () => {
 
     useEffect(() => {
         fetchTrades();
-    }, []);
+    }, [activeRole]);
 
     return {
         trades,

@@ -7,6 +7,7 @@ interface RoleState {
     isBuyer: () => boolean;
     isSeller: () => boolean;
     isRider: () => boolean;
+    isPost: () => boolean;
 }
 
 export const useRoleStore = create<RoleState>((set, get) => ({
@@ -17,4 +18,5 @@ export const useRoleStore = create<RoleState>((set, get) => ({
     isBuyer: () => get().activeRole === "buyer",
     isSeller: () => get().activeRole === "seller",
     isRider: () => get().activeRole === "rider",
+    isPost: () => get().activeRole === "post",
 }));

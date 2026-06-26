@@ -5,6 +5,7 @@ import { colors, spacing } from "@/constants/theme";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function SignUp() {
     const router = useRouter();
@@ -32,6 +33,8 @@ export default function SignUp() {
         });
         if (!result.success) {
             setError(result.error ?? "Registration failed");
+        } else {
+            router.replace("/sign-in");
         }
     };
 
@@ -44,15 +47,31 @@ export default function SignUp() {
                 paddingVertical: spacing[10],
                 backgroundColor: colors.background,
             }}
+            showsVerticalScrollIndicator={false}
         >
-            {/* Logo */}
-            <View style={{ alignItems: "center", marginBottom: spacing[8] }}>
+            {/* Header & Logo */}
+            <View style={{ alignItems: "center", marginBottom: spacing[6] }}>
+                <View
+                    style={{
+                        width: 70,
+                        height: 70,
+                        borderRadius: 20,
+                        backgroundColor: colors.primary + "15",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginBottom: spacing[4],
+                        borderWidth: 1,
+                        borderColor: colors.primary + "30",
+                    }}
+                >
+                    <Ionicons name="shield-checkmark" size={36} color={colors.primary} />
+                </View>
                 <Text
                     style={{
-                        color: colors.primary,
-                        fontSize: 32,
+                        color: colors.foreground,
+                        fontSize: 28,
                         fontWeight: "800",
-                        letterSpacing: 1,
+                        letterSpacing: 0.5,
                     }}
                 >
                     SafeTrade
@@ -62,14 +81,24 @@ export default function SignUp() {
                         color: colors.muted,
                         fontSize: 14,
                         marginTop: spacing[1],
+                        textAlign: "center",
                     }}
                 >
-                    Create your account
+                    Create a secure escrow account
                 </Text>
             </View>
 
-            {/* Form */}
-            <View style={{ marginBottom: spacing[4] }}>
+            {/* Form Card */}
+            <View
+                style={{
+                    backgroundColor: colors.card,
+                    borderRadius: 24,
+                    padding: spacing[5],
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    marginBottom: spacing[5],
+                }}
+            >
                 <View style={{ flexDirection: "row", gap: spacing[3] }}>
                     <Input
                         label="First Name"
@@ -119,6 +148,7 @@ export default function SignUp() {
                             fontSize: 13,
                             marginBottom: spacing[3],
                             textAlign: "center",
+                            fontWeight: "500",
                         }}
                     >
                         {error}
@@ -129,6 +159,18 @@ export default function SignUp() {
                     label="Create Account"
                     onPress={handleRegister}
                     isLoading={isLoading}
+                    variant="primary"
+                    style={{
+                        backgroundColor: colors.primary,
+                        borderRadius: 12,
+                        paddingVertical: 14,
+                        marginTop: spacing[2],
+                    }}
+                    textStyle={{
+                        color: "#000000",
+                        fontWeight: "700",
+                        fontSize: 16,
+                    }}
                 />
             </View>
 
@@ -138,7 +180,7 @@ export default function SignUp() {
                     flexDirection: "row",
                     justifyContent: "center",
                     alignItems: "center",
-                    gap: spacing[1],
+                    gap: spacing[1.5],
                 }}
             >
                 <Text style={{ color: colors.muted, fontSize: 14 }}>
@@ -149,7 +191,7 @@ export default function SignUp() {
                         style={{
                             color: colors.primary,
                             fontSize: 14,
-                            fontWeight: "600",
+                            fontWeight: "700",
                         }}
                     >
                         Sign In
