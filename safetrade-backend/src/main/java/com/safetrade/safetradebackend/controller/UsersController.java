@@ -1,10 +1,8 @@
 package com.safetrade.safetradebackend.controller;
 
 import com.safetrade.safetradebackend.model.Users;
-
 import com.safetrade.safetradebackend.repository.UsersRepository;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -20,7 +18,7 @@ public class UsersController {
     }
     //    the various API's
 
-    @PostMapping("/create")
+    @PostMapping("/register")
     public Users createUser(@RequestBody Users user) {
         Users newUser = new Users();
         newUser.setUsername(user.getUsername());
@@ -57,5 +55,17 @@ public Users getUser(@PathVariable String username) {
     @GetMapping("/all")
     public List<Users> getAllUsers() {
         return usersRepository.findAll();
+    }
+
+    @PostMapping("/login")
+    public Users login(@RequestBody Users user) {
+        for (Users user1 : usersRepository.findAll()) {
+            if (user1.getUsername().equals(user.getUsername()) && user.getPassword().equals(user.getPassword())) {
+                return user1;
+            }else {
+                throw new RuntimeException("Invalid username or password");
+            }
+        }
+        return user;
     }
 }

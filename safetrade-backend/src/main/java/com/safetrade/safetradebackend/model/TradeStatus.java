@@ -1,11 +1,12 @@
 package com.safetrade.safetradebackend.model;
 
-public enum TradeState {
-    PENDING,
+public enum TradeStatus {
+    CREATED,
     FUNDED,
-    PHOTO_VERIFIED,
+    DISPATCH_PENDING,
     IN_TRANSIT,
     AT_POST,
     RELEASED,
-    CLOSED
+    PENDING,
 }
+

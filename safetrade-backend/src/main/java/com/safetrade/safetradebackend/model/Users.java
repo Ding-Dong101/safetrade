@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -31,4 +32,7 @@ public class Users {
 
     @Column(nullable = false)
     private String password;
+
+    @ManyToMany
+    private List<Trades> trades;
 }
