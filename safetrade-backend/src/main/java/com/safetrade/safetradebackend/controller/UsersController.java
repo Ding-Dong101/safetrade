@@ -32,25 +32,20 @@ public class UsersController {
     }
 
 //    GETTING A PARTICULAR CUSTOMER BY NAME OR ID
-    @GetMapping("/get/{id}")
+    @GetMapping("/get/id/{id}")
     public Users getUser(@PathVariable UUID id) {
+        return usersRepository.findById(id).orElse(null);
+    }
+//    GETTING A PARTICULAR CUSTOMER BY NAME
+    @GetMapping("/get/username/{username}")
+    public Users getUser(@PathVariable String username) {
         for(Users user : usersRepository.findAll()) {
-            if(user.getId().equals(id)) {
+            if(user.getUsername().equals(username)) {
                 return user;
             }
         }
         return null;
     }
-//    GETTING A PARTICULAR CUSTOMER BY NAME
-@GetMapping("/get/{username}")
-public Users getUser(@PathVariable String username) {
-    for(Users user : usersRepository.findAll()) {
-        if(user.getUsername().equals(username)) {
-            return user;
-        }
-    }
-    return null;
-}
 //    GETTING ALL THE CUSTOMERS
     @GetMapping("/all")
     public List<Users> getAllUsers() {
@@ -60,12 +55,10 @@ public Users getUser(@PathVariable String username) {
     @PostMapping("/login")
     public Users login(@RequestBody Users user) {
         for (Users user1 : usersRepository.findAll()) {
-            if (user1.getUsername().equals(user.getUsername()) && user.getPassword().equals(user.getPassword())) {
+            if (user1.getUsername().equals(user.getUsername()) && user1.getPassword().equals(user.getPassword())) {
                 return user1;
-            }else {
-                throw new RuntimeException("Invalid username or password");
             }
         }
-        return user;
+        throw new RuntimeException("Invalid username or password");
     }
 }
