@@ -8,6 +8,7 @@ export interface User {
     avatar?: string;
     isAdmin: boolean;
     createdAt: string;
+    balance?: number;
 }
 
 export interface LoginCredentials {

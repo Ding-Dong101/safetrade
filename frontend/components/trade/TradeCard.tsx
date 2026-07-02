@@ -30,7 +30,7 @@ const TradeCard = ({ trade, onPress }: TradeCardProps) => {
                         fontWeight: "600",
                     }}
                 >
-                    {trade.buyerUsername ?? "Unknown Buyer"}
+                    {trade.buyerId ? `Buyer ${trade.buyerId.substring(0, 8)}` : "Unknown Buyer"}
                 </Text>
                 <TradeStatusBadge status={trade.status} />
             </View>
@@ -43,7 +43,7 @@ const TradeCard = ({ trade, onPress }: TradeCardProps) => {
                     marginBottom: spacing[1],
                 }}
             >
-                {formatCurrency(trade.amount)}
+                {formatCurrency(trade.price)}
             </Text>
 
             {trade.description && (

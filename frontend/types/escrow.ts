@@ -9,10 +9,9 @@ export type EscrowStatus =
 export interface Escrow {
     id: string;
     itemName: string;
-    amount: number;
-    currency: string;
-    buyerUsername: string;
-    sellerUsername: string;
+    price: number;
+    buyerId: string;
+    sellerId: string;
     sellerEmail?: string;
     description?: string;
     status: EscrowStatus;
@@ -22,8 +21,8 @@ export interface Escrow {
 
 export interface CreateEscrowPayload {
     itemName: string;
-    amount: number;
-    sellerUsername: string;
+    price: number;
+    sellerId: string;
     sellerEmail?: string;
     description?: string;
 }

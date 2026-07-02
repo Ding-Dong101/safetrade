@@ -28,9 +28,10 @@ export const useAuth = () => {
             await register(credentials);
             return { success: true };
         } catch (error: any) {
+            console.error("Registration Exception:", error, error?.response?.data);
             return {
                 success: false,
-                error: error?.response?.data?.message ?? "Registration failed",
+                error: error?.response?.data?.message ?? error?.message ?? "Registration failed",
             };
         } finally {
             setLoading(false);
@@ -55,5 +56,6 @@ export const useAuth = () => {
         login: handleLogin,
         register: handleRegister,
         logout: handleLogout,
+        setUser,
     };
 };

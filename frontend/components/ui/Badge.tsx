@@ -23,6 +23,7 @@ const variantColors: Record<BadgeVariant, { bg: string; text: string }> = {
 };
 
 const statusVariantMap: Record<string, BadgeVariant> = {
+    created: "warning",
     pending: "warning",
     funded: "success",
     photo_verified: "info",

@@ -1,4 +1,4 @@
-import { View, Text, FlatList, TouchableOpacity, TextInput, Alert, ScrollView, Modal } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, TextInput, Alert, Modal } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing } from "@/constants/theme";
@@ -9,7 +9,6 @@ import BalanceCard from "@/components/home/BalanceCard";
 import TradeCard from "@/components/trade/TradeCard";
 import EmptyState from "@/components/shared/EmptyState";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
-import { Trade } from "@/types/trade";
 import { useState, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -19,18 +18,19 @@ import {
     confirmPostDropoff,
     confirmBuyerCollect
 } from "@/services/tradeService";
+import { topUpWallet } from "@/services/authService";
 
 export default function Home() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { activeRole, switchRole } = useRole();
-    const { user } = useAuth();
+    const { user, token, setUser } = useAuth();
     const { trades, isLoading, refetch } = useTrades();
 
     // Local States
     const [menuOpen, setMenuOpen] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
-    
+
     // Modal states for user actions
     const [codeModalVisible, setCodeModalVisible] = useState(false);
     const [modalConfig, setModalConfig] = useState<{
@@ -42,16 +42,42 @@ export default function Home() {
 
     // Rider tab selection: "ongoing" | "available"
     const [riderTab, setRiderTab] = useState<"ongoing" | "available">("ongoing");
-    
+
     // Search filter for Post Operator
     const [postSearch, setPostSearch] = useState("");
 
     // Auto redirect to sign-in if not logged in
     useEffect(() => {
         if (!user && !isLoading) {
-            router.replace("/(auth)/sign-in" as any);
+            const timeout = setTimeout(() => {
+                router.replace("/(auth)/sign-in" as any);
+            }, 0);
+            return () => clearTimeout(timeout);
         }
-    }, [user, isLoading]);
+    }, [user, isLoading, router]);
+
+    // Polling for live updates
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            if (user) {
+                refetch();
+            }
+        }, 5000);
+        return () => clearInterval(intervalId);
+    }, [user, refetch]);
+
+    const handleTopUp = async () => {
+        setActionLoading(true);
+        try {
+            const updatedUser = await topUpWallet(500); // Add 500 GHS
+            setUser(updatedUser, token || "");
+            Alert.alert("Success", "Added 500 GHS to your wallet");
+        } catch (err: any) {
+            Alert.alert("Error", err?.response?.data ?? "Failed to top up");
+        } finally {
+            setActionLoading(false);
+        }
+    };
 
     const handleOpenCodeModal = (title: string, placeholder: string, onSubmit: (val: string) => Promise<void>) => {
         setModalConfig({ title, placeholder, onSubmit });
@@ -106,7 +132,7 @@ export default function Home() {
     const filteredTrades = trades.filter((trade) => {
         if (activeRole === "buyer") {
             // Buyer is authenticated user
-            return true; 
+            return true;
         } else if (activeRole === "seller") {
             return true;
         } else if (activeRole === "rider") {
@@ -123,8 +149,8 @@ export default function Home() {
             if (!postSearch.trim()) return true;
             return (
                 trade.id.includes(postSearch) ||
-                trade.buyerUsername.toLowerCase().includes(postSearch.toLowerCase()) ||
-                trade.sellerUsername.toLowerCase().includes(postSearch.toLowerCase())
+                (trade.buyerId && trade.buyerId.toLowerCase().includes(postSearch.toLowerCase())) ||
+                (trade.sellerId && trade.sellerId.toLowerCase().includes(postSearch.toLowerCase()))
             );
         }
         return true;
@@ -270,17 +296,16 @@ export default function Home() {
                 {/* Balance Summary Card */}
                 {activeRole === "buyer" && (
                     <BalanceCard
-                        available={user ? 1250.00 : 0}
-                        total={user ? 4500.00 : 0}
+                        available={user?.balance ?? 0}
+                        total={user?.balance ?? 0}
                         activeDeals={filteredTrades.length}
-                        totalReviews={4}
-                        onTopUp={() => Alert.alert("Top Up", "Simulated Paystack gateway top-up.")}
+                        onTopUp={handleTopUp}
                     />
                 )}
                 {activeRole === "seller" && (
                     <BalanceCard
-                        available={user ? 3200.00 : 0}
-                        total={user ? 3200.00 : 0}
+                        available={user?.balance ?? 0}
+                        total={user?.balance ?? 0}
                         activeDeals={filteredTrades.length}
                         totalReviews={8}
                     />
@@ -400,7 +425,7 @@ export default function Home() {
                                 trade={item}
                                 onPress={() => router.push(`/trade/${item.id}` as any)}
                             />
-                            
+
                             {/* Interactive Contextual Actions */}
                             <View
                                 style={{
@@ -576,7 +601,7 @@ export default function Home() {
                 contentContainerStyle={{
                     paddingHorizontal: spacing[4],
                     paddingTop: insets.top + spacing[4],
-                    paddingBottom: spacing[24],
+                    paddingBottom: spacing[24]
                 }}
                 showsVerticalScrollIndicator={false}
             />
@@ -619,7 +644,7 @@ export default function Home() {
                         >
                             {modalConfig?.title}
                         </Text>
-                        
+
                         <TextInput
                             placeholder={modalConfig?.placeholder}
                             placeholderTextColor={colors.mutedForeground}

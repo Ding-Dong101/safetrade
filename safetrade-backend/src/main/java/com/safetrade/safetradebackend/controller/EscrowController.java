@@ -6,7 +6,7 @@ import com.safetrade.safetradebackend.repository.TradesRepository;
 import com.safetrade.safetradebackend.service.EscrowService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.lang.NonNull;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,16 +16,18 @@ import java.util.UUID;
 public class EscrowController {
     private final EscrowService escrowService;
     private final TradesRepository tradesRepository;
-    private final RestTemplate restTemplate;
+    private final com.safetrade.safetradebackend.repository.UsersRepository usersRepository;
+    private final com.safetrade.safetradebackend.service.NotificationService notificationService;
 
-    public EscrowController(EscrowService escrowService, TradesRepository tradesRepository, RestTemplate restTemplate) {
+    public EscrowController(EscrowService escrowService, TradesRepository tradesRepository, com.safetrade.safetradebackend.repository.UsersRepository usersRepository, com.safetrade.safetradebackend.service.NotificationService notificationService) {
         this.escrowService = escrowService;
         this.tradesRepository = tradesRepository;
-        this.restTemplate = restTemplate;
+        this.usersRepository = usersRepository;
+        this.notificationService = notificationService;
     }
 
     @PostMapping("/init/{tradeId}")
-    public ResponseEntity<?> init(@PathVariable UUID tradeId) {
+    public ResponseEntity<?> init(@PathVariable @NonNull UUID tradeId) {
         Optional<Trades> optionalTrade = tradesRepository.findById(tradeId);
         if (optionalTrade.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -37,7 +39,7 @@ public class EscrowController {
     }
 
     @PostMapping("/fund/{tradeId}")
-    public ResponseEntity<?> fund(@PathVariable UUID tradeId,
+    public ResponseEntity<?> fund(@PathVariable @NonNull UUID tradeId,
                                   @RequestParam(required = false) String buyerEmail,
                                   @RequestParam(required = false) Double amount) {
         Optional<Trades> optionalTrade = tradesRepository.findById(tradeId);
@@ -59,7 +61,7 @@ public class EscrowController {
     }
 
     @PatchMapping("/deliver/{tradeId}")
-    public ResponseEntity<?> deliver(@PathVariable UUID tradeId) {
+    public ResponseEntity<?> deliver(@PathVariable @NonNull UUID tradeId) {
         Optional<Trades> optionalTrade = tradesRepository.findById(tradeId);
         if (optionalTrade.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -77,7 +79,7 @@ public class EscrowController {
     }
 
     @PostMapping("/release/{tradeId}")
-    public ResponseEntity<?> release(@PathVariable UUID tradeId,
+    public ResponseEntity<?> release(@PathVariable @NonNull UUID tradeId,
                                      @RequestParam(required = false) String recipientCode,
                                      @RequestParam(required = false) Double amount) {
         Optional<Trades> optionalTrade = tradesRepository.findById(tradeId);
@@ -102,7 +104,7 @@ public class EscrowController {
     }
 
     @PostMapping("/refund/{tradeId}")
-    public ResponseEntity<?> refund(@PathVariable UUID tradeId) {
+    public ResponseEntity<?> refund(@PathVariable @NonNull UUID tradeId) {
         Optional<Trades> optionalTrade = tradesRepository.findById(tradeId);
         if (optionalTrade.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -122,7 +124,7 @@ public class EscrowController {
     }
 
     @GetMapping("/status/{tradeId}")
-    public ResponseEntity<?> getStatus(@PathVariable UUID tradeId) {
+    public ResponseEntity<?> getStatus(@PathVariable @NonNull UUID tradeId) {
         Optional<Trades> optionalTrade = tradesRepository.findById(tradeId);
         if (optionalTrade.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -138,13 +140,10 @@ public class EscrowController {
 
     private void sendNotification(String userId, String type, String message) {
         try {
-            String url = "http://localhost:8080/api/notify";
-            java.util.Map<String, Object> body = java.util.Map.of(
-                    "userId", userId,
-                    "type", type,
-                    "message", message
-            );
-            restTemplate.postForEntity(url, body, String.class);
+            Optional<com.safetrade.safetradebackend.model.Users> user = usersRepository.findById(java.util.Objects.requireNonNull(UUID.fromString(userId)));
+            if(user.isPresent() && user.get().getPushToken() != null) {
+                notificationService.sendPushNotification(user.get().getPushToken(), type, message);
+            }
         } catch (Exception e) {
             System.err.println("Failed to send notification: " + e.getMessage());
         }

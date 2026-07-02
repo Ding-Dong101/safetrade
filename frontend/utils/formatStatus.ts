@@ -5,13 +5,14 @@ import { JobStatus } from "@/types/rider";
 export const formatTradeStatus = (status: string): string => {
     const lower = status?.toLowerCase() ?? "";
     const labels: Record<string, string> = {
+        created: "Created",
         pending: "Pending",
         funded: "Funded",
         photo_verified: "Photo Verified",
         dispatch_pending: "Photo Verified",
         in_transit: "In Transit",
         at_post: "At Post",
-        delivered: "At Post",
+        delivered: "Delivered",
         released: "Released",
         closed: "Closed",
         refunded: "Refunded",

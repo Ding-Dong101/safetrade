@@ -27,7 +27,7 @@ const Input = ({ label, error, containerStyle, ...props }: InputProps) => {
                 style={[
                     {
                         backgroundColor: colors.card,
-                        color: colors.foreground,
+                        color: "#FFFFFF",
                         borderRadius: 8,
                         paddingVertical: 12,
                         paddingHorizontal: 16,

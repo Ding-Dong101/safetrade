@@ -38,6 +38,9 @@ const TabIcon = ({
 
 export default function TabLayout() {
     const insets = useSafeAreaInsets();
+    
+    // Initialize Push Notifications so token gets sent to backend
+    require("../../hooks/usePushNotifications").usePushNotifications();
 
     return (
         <Tabs

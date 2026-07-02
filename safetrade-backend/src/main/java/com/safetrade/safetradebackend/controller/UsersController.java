@@ -15,8 +15,11 @@ public class UsersController {
 
     private final UsersRepository usersRepository;
 
-    public UsersController(UsersRepository usersRepository) {
+    private final com.safetrade.safetradebackend.security.JwtService jwtService;
+
+    public UsersController(UsersRepository usersRepository, com.safetrade.safetradebackend.security.JwtService jwtService) {
         this.usersRepository = usersRepository;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/register")
@@ -27,6 +30,7 @@ public class UsersController {
         newUser.setLastname(user.getLastname());
         newUser.setPassword(user.getPassword());
         newUser.setEmail(user.getEmail());
+        newUser.setBalance(0.0);
 
         Users saved = usersRepository.save(newUser);
         return ResponseEntity.status(201).body(buildAuthResponse(saved));
@@ -64,8 +68,44 @@ public class UsersController {
         return usersRepository.findAll();
     }
 
+    @PostMapping("/push-token")
+    public ResponseEntity<?> updatePushToken(@RequestBody java.util.Map<String, String> body, java.security.Principal principal) {
+        if(principal == null) return ResponseEntity.status(401).build();
+        String pushToken = body.get("pushToken");
+        for(Users user : usersRepository.findAll()) {
+            if(user.getUsername().equals(principal.getName())) {
+                user.setPushToken(pushToken);
+                usersRepository.save(user);
+                return ResponseEntity.ok().build();
+            }
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/topup")
+    public ResponseEntity<?> topUpWallet(@RequestBody java.util.Map<String, Double> body, java.security.Principal principal) {
+        if(principal == null) return ResponseEntity.status(401).build();
+        Double amount = body.get("amount");
+        if(amount == null || amount <= 0) return ResponseEntity.badRequest().body("Invalid amount");
+
+        for(Users user : usersRepository.findAll()) {
+            if(user.getUsername().equals(principal.getName())) {
+                user.setBalance((user.getBalance() == null ? 0.0 : user.getBalance()) + amount);
+                usersRepository.save(user);
+                return ResponseEntity.ok(buildAuthResponse(user).getUser());
+            }
+        }
+        return ResponseEntity.notFound().build();
+    }
+
     private AuthResponse buildAuthResponse(Users user) {
-        String token = user.getId().toString(); // simple mock JWT token using user UUID
+        org.springframework.security.core.userdetails.UserDetails userDetails = 
+            org.springframework.security.core.userdetails.User.withUsername(user.getUsername())
+            .password(user.getPassword())
+            .authorities(new java.util.ArrayList<>())
+            .build();
+            
+        String token = jwtService.generateToken(userDetails);
         
         AuthResponse.UserDto userDto = AuthResponse.UserDto.builder()
                 .id(user.getId())
@@ -74,6 +114,7 @@ public class UsersController {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .isAdmin(false)
+                .balance(user.getBalance())
                 .createdAt(java.time.LocalDateTime.now().toString())
                 .build();
 

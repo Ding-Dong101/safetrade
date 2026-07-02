@@ -33,6 +33,12 @@ public class Users {
     @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false)
+    private Double balance = 0.0;
+
+    @Column
+    private String pushToken;
+
     @ManyToMany
     private List<Trades> trades;
 }

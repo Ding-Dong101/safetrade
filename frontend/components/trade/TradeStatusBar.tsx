@@ -7,20 +7,21 @@ interface TradeStatusBarProps {
 }
 
 const STEPS = [
-    "pending",
-    "funded",
-    "photo_verified",
-    "in_transit",
-    "at_post",
-    "released",
-    "closed",
+    "CREATED",
+    "FUNDED",
+    "DISPATCH_PENDING",
+    "IN_TRANSIT",
+    "AT_POST",
+    "RELEASED",
+    "CLOSED",
 ];
 
 const normalizeStatus = (s: string): string => {
-    const lower = s?.toLowerCase() ?? "";
-    if (lower === "dispatch_pending" || lower === "photo_verified") return "photo_verified";
-    if (lower === "delivered") return "at_post";
-    return lower;
+    const upper = s?.toUpperCase() ?? "";
+    if (upper === "PHOTO_VERIFIED") return "DISPATCH_PENDING";
+    if (upper === "DELIVERED") return "AT_POST";
+    if (upper === "PENDING") return "CREATED";
+    return upper;
 };
 
 const TradeStatusBar = ({ status }: TradeStatusBarProps) => {

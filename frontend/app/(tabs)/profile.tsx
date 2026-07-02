@@ -66,7 +66,7 @@ export default function Profile() {
                         marginBottom: 4,
                     }}
                 >
-                    {user?.firstName ? `${user.firstName} ${user.lastName}` : "SafeTrade User"}
+                    {user?.firstName ? `${user.firstName} ${user.lastName}` : ""}
                 </Text>
 
                 <Text
@@ -76,7 +76,7 @@ export default function Profile() {
                         marginBottom: spacing[4],
                     }}
                 >
-                    @{user?.username ?? "username"}
+                    @{user?.username || ""}
                 </Text>
 
                 {/* Details list */}
@@ -92,7 +92,7 @@ export default function Profile() {
                     >
                         <Text style={{ color: colors.muted, fontSize: 13 }}>Email Address</Text>
                         <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "600" }}>
-                            {user?.email ?? "Not configured"}
+                            {user?.email || ""}
                         </Text>
                     </View>
 
@@ -105,7 +105,7 @@ export default function Profile() {
                     >
                         <Text style={{ color: colors.muted, fontSize: 13 }}>Account Type</Text>
                         <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "700" }}>
-                            Standard Member
+                            {user?.isAdmin ? "Administrator" : "Standard Member"}
                         </Text>
                     </View>
                 </View>

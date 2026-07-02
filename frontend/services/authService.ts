@@ -32,3 +32,8 @@ export const getUserByUsername = async (username: string): Promise<any> => {
     const response = await api.get(`/users/get/username/${username}`);
     return response.data;
 };
+
+export const topUpWallet = async (amount: number): Promise<any> => {
+    const response = await api.post("/users/topup", { amount });
+    return response.data;
+};

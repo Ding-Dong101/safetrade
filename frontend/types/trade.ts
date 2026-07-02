@@ -1,26 +1,31 @@
 export type TradeStatus =
-    | "pending"
-    | "funded"
-    | "photo_verified"
-    | "in_transit"
-    | "at_post"
-    | "released"
-    | "closed";
+    | "CREATED"
+    | "FUNDED"
+    | "DISPATCH_PENDING"
+    | "IN_TRANSIT"
+    | "AT_POST"
+    | "RELEASED"
+    | "PENDING"
+    | "DELIVERED"
+    | "CLOSED"
+    | "REFUNDED";
 
 export interface Trade {
     id: string;
-    buyerUsername: string;
-    sellerUsername: string;
-    amount: number;
-    currency: string;
+    buyerId: string;
+    sellerId: string;
+    price: number;
     status: TradeStatus;
+    title?: string;
     description?: string;
-    comments?: string;
     dispatchCode?: string;
-    dropoffCode?: string;
+    dropOffCode?: string;
+    releaseCode?: string;
     riderId?: string;
+    itemPhotoBase64?: string;
     createdAt: string;
-    updatedAt?: string;
+    riderPickedUpAt?: string;
+    postArrivedAt?: string;
 }
 
 export interface CreateTradePayload {

@@ -31,5 +31,6 @@ public class AuthResponse {
         private String avatar;
         private boolean isAdmin;
         private String createdAt;
+        private Double balance;
     }
 }

@@ -22,11 +22,24 @@ public class TradesController {
     private final TradesRepository tradesRepository;
     private final UsersRepository usersRepository;
     private final EscrowService escrowService;
+    private final com.safetrade.safetradebackend.service.NotificationService notificationService;
 
-    public TradesController(TradesRepository tradesRepository, UsersRepository usersRepository, EscrowService escrowService) {
+    public TradesController(TradesRepository tradesRepository, UsersRepository usersRepository, EscrowService escrowService, com.safetrade.safetradebackend.service.NotificationService notificationService) {
         this.tradesRepository = tradesRepository;
         this.usersRepository = usersRepository;
         this.escrowService = escrowService;
+        this.notificationService = notificationService;
+    }
+
+    private void sendNotification(String userId, String type, String message) {
+        try {
+            Optional<Users> user = usersRepository.findById(java.util.Objects.requireNonNull(UUID.fromString(userId)));
+            if(user.isPresent() && user.get().getPushToken() != null) {
+                notificationService.sendPushNotification(user.get().getPushToken(), type, message);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
     }
 
     // Get all trades or filter by authenticated user and role
@@ -36,6 +49,16 @@ public class TradesController {
         String userId = null;
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             userId = authHeader.substring(7).trim();
+            try {
+                // Since JwtService isn't injected here, we just use the raw token or rely on SecurityContext
+                org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                if(auth != null && auth.getName() != null) {
+                    Optional<Users> user = usersRepository.findByUsername(auth.getName());
+                    if (user.isPresent()) {
+                        userId = user.get().getId().toString();
+                    }
+                }
+            } catch (Exception e) {}
         }
 
         if (userId != null) {
@@ -72,7 +95,15 @@ public class TradesController {
 
         String buyerId = request.getBuyerId();
         if (buyerId == null && authHeader != null && authHeader.startsWith("Bearer ")) {
-            buyerId = authHeader.substring(7).trim();
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if(auth != null && auth.getName() != null) {
+                for(Users u : usersRepository.findAll()) {
+                    if(u.getUsername().equals(auth.getName())) {
+                        buyerId = u.getId().toString();
+                        break;
+                    }
+                }
+            }
         }
 
         if (buyerId == null) {
@@ -90,6 +121,9 @@ public class TradesController {
                 .build();
 
         Trades saved = tradesRepository.save(trade);
+        
+        sendNotification(request.getSellerId(), "NEW_TRADE", "A new trade has been initiated with you.");
+        
         return ResponseEntity.status(201).body(saved);
     }
 
@@ -109,7 +143,7 @@ public class TradesController {
         // Call Escrow Service to hold funds
         String buyerEmail = "buyer@campus.edu"; // default fallback
         try {
-            Optional<Users> buyerOpt = usersRepository.findById(UUID.fromString(trade.getBuyerId()));
+            Optional<Users> buyerOpt = usersRepository.findById(java.util.Objects.requireNonNull(UUID.fromString(trade.getBuyerId())));
             if (buyerOpt.isPresent()) {
                 buyerEmail = buyerOpt.get().getEmail();
             }
@@ -124,6 +158,9 @@ public class TradesController {
 
         trade.setStatus(TradeStatus.FUNDED);
         Trades saved = tradesRepository.save(trade);
+        
+        sendNotification(trade.getSellerId(), "TRADE_FUNDED", "Funds have been deposited. Please prepare item for dispatch.");
+        
         return ResponseEntity.ok(saved);
     }
 
@@ -149,6 +186,9 @@ public class TradesController {
         trade.setStatus(TradeStatus.DISPATCH_PENDING);
 
         Trades saved = tradesRepository.save(trade);
+        
+        sendNotification(trade.getBuyerId(), "DISPATCH_PENDING", "Seller has verified item photo and is awaiting dispatch.");
+        
         return ResponseEntity.ok(saved);
     }
 
@@ -179,6 +219,10 @@ public class TradesController {
         trade.setStatus(TradeStatus.IN_TRANSIT);
 
         Trades saved = tradesRepository.save(trade);
+        
+        sendNotification(trade.getBuyerId(), "IN_TRANSIT", "Rider has picked up the item and it is in transit.");
+        sendNotification(trade.getSellerId(), "IN_TRANSIT", "Rider has successfully picked up your item.");
+        
         return ResponseEntity.ok(saved);
     }
 
@@ -204,6 +248,10 @@ public class TradesController {
         trade.setStatus(TradeStatus.AT_POST);
 
         Trades saved = tradesRepository.save(trade);
+        
+        sendNotification(trade.getBuyerId(), "AT_POST", "Your item has arrived at the SafeTrade post. Please collect it using your release code.");
+        sendNotification(trade.getSellerId(), "AT_POST", "Item has successfully reached the SafeTrade post.");
+        
         return ResponseEntity.ok(saved);
     }
 

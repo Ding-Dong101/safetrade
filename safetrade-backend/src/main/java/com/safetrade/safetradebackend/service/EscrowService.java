@@ -33,8 +33,8 @@ public class EscrowService {
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
             return response.getBody();
         } catch (Exception e) {
-            System.err.println("Paystack fundEscrow failed: " + e.getMessage() + ". Returning simulated response.");
-            return "{\"status\":true,\"message\":\"Authorization URL created (SIMULATED)\",\"data\":{\"authorization_url\":\"https://checkout.paystack.com/mock_auth_url\",\"access_code\":\"mock_access_code\",\"reference\":\"trade_" + tradeId + "\"}}";
+            System.out.println("Paystack fundEscrow failed (Likely invalid API keys). Mocking success for demo. Error: " + e.getMessage());
+            return "{\"status\":true,\"message\":\"Authorization URL created (MOCK)\",\"data\":{\"authorization_url\":\"https://mock-paystack.com\",\"access_code\":\"mock_code\",\"reference\":\"trade_" + tradeId + "\"}}";
         }
     }
 
@@ -46,7 +46,7 @@ public class EscrowService {
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
             return response.getBody().contains("\"status\":\"success\"");
         } catch (Exception e) {
-            System.err.println("Paystack verifyPayment failed: " + e.getMessage() + ". Returning simulated success.");
+            System.out.println("Paystack verifyPayment failed. Mocking success for demo. Error: " + e.getMessage());
             return true;
         }
     }
@@ -72,8 +72,8 @@ public class EscrowService {
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
             return response.getBody();
         } catch (Exception e) {
-            System.err.println("Paystack releaseFunds failed: " + e.getMessage() + ". Returning simulated response.");
-            return "{\"status\":true,\"message\":\"Transfer initiated (SIMULATED)\",\"data\":{\"reference\":\"transfer_mock_ref\",\"amount\":" + (int)(amount * 100) + ",\"status\":\"success\"}}";
+            System.out.println("Paystack releaseFunds failed. Mocking success for demo. Error: " + e.getMessage());
+            return "{\"status\":true,\"message\":\"Transfer successful (MOCK)\"}";
         }
     }
 
@@ -87,8 +87,8 @@ public class EscrowService {
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
             return response.getBody();
         } catch (Exception e) {
-            System.err.println("Paystack refundBuyer failed: " + e.getMessage() + ". Returning simulated response.");
-            return "{\"status\":true,\"message\":\"Refund initiated (SIMULATED)\",\"data\":{\"status\":\"processed\"}}";
+            System.out.println("Paystack refundBuyer failed. Mocking success for demo. Error: " + e.getMessage());
+            return "{\"status\":true,\"message\":\"Refund successful (MOCK)\"}";
         }
     }
 }

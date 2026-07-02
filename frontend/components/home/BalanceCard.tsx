@@ -7,7 +7,6 @@ interface BalanceCardProps {
     available: number;
     total: number;
     activeDeals?: number;
-    totalReviews?: number;
     onTopUp?: () => void;
 }
 
@@ -15,7 +14,6 @@ const BalanceCard = ({
     available,
     total,
     activeDeals = 0,
-    totalReviews = 0,
     onTopUp,
 }: BalanceCardProps) => {
     return (
@@ -142,27 +140,6 @@ const BalanceCard = ({
                         <Text
                             style={{
                                 color: colors.primary + "b0",
-                                fontSize: 11,
-                                fontWeight: "600",
-                            }}
-                        >
-                            In Escrow
-                        </Text>
-                    </View>
-
-                    <View style={{ alignItems: "flex-end" }}>
-                        <Text
-                            style={{
-                                color: colors.accent,
-                                fontSize: 18,
-                                fontWeight: "800",
-                            }}
-                        >
-                            {totalReviews}
-                        </Text>
-                        <Text
-                            style={{
-                                color: colors.accent + "b0",
                                 fontSize: 11,
                                 fontWeight: "600",
                             }}
