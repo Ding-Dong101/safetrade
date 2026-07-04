@@ -6,9 +6,6 @@
 
 ## 🚀 Recent Changes
 
-- **Removed Docker Implementation**: The `Dockerfile`, `.dockerignore`, and `docker-compose.yml` have been removed from the project as requested, simplifying the local development and deployment processes without containerization overhead.
-
----
 
 ## 🔗 API Endpoints
 
