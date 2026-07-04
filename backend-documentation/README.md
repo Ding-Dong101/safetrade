@@ -6,6 +6,9 @@
 
 ## 🚀 Recent Changes
 
+- **Dockerization**: Containerized the entire application ecosystem, including the Spring Boot backend, Expo web frontend, and PostgreSQL database.
+- **Docker Compose**: Added `docker-compose.yml` to orchestrate and run all services seamlessly together.
+- **Database Configuration**: Updated backend configuration to connect to the containerized PostgreSQL instance dynamically.
 
 ## 🔗 API Endpoints
 
