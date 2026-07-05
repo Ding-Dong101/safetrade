@@ -1,4 +1,4 @@
-export const colors = {
+export const darkColors = {
     background: "#0d0d0d",
     card: "#1a1a1a",
     cardAlt: "#222222",
@@ -13,6 +13,23 @@ export const colors = {
     info: "#3b82f6",
     purple: "#7c3aed",
     border: "rgba(255,255,255,0.1)",
+} as const;
+
+export const lightColors = {
+    background: "#f5f5f5",
+    card: "#ffffff",
+    cardAlt: "#f0f0f0",
+    foreground: "#0d0d0d",
+    muted: "rgba(0,0,0,0.5)",
+    mutedForeground: "rgba(0,0,0,0.3)",
+    primary: "#00a152",
+    accent: "#0097a7",
+    warning: "#f5c542",
+    danger: "#dc2626",
+    success: "#16a34a",
+    info: "#3b82f6",
+    purple: "#7c3aed",
+    border: "rgba(0,0,0,0.1)",
 } as const;
 
 export const spacing = {
@@ -36,15 +53,18 @@ export const spacing = {
 
 export const components = {
     tabBar: {
-        height: spacing[18],
+        height: 64,
         horizontalInset: spacing[5],
         radius: spacing[8],
-        iconFrame: spacing[12],
+        iconFrame: 44,
     },
 } as const;
 
+// Default export for backward compatibility
+export const colors = darkColors;
+
 export const theme = {
-    colors,
+    colors: darkColors,
     spacing,
     components,
 } as const;

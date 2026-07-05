@@ -29,7 +29,7 @@ const TabIcon = ({
         >
             <Ionicons
                 name={name}
-                size={22}
+                size={30}
                 color={focused ? colors.primary : colors.muted}
             />
         </View>

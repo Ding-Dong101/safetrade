@@ -1,5 +1,5 @@
 import { View, Text, ScrollView } from "react-native";
-import { colors, spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState } from "react";
 import Input from "@/components/ui/Input";
@@ -9,6 +9,7 @@ import { useRouter } from "expo-router";
 export default function New() {
     const insets = useSafeAreaInsets();
     const router = useRouter();
+    const { colors, spacing } = useTheme();
 
     const [sellerUsername, setSellerUsername] = useState("");
     const [amount, setAmount] = useState("");

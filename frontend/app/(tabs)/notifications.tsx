@@ -1,6 +1,6 @@
 
 import { View, Text, FlatList } from "react-native";
-import { colors, spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import EmptyState from "@/components/shared/EmptyState";
 
@@ -30,6 +30,7 @@ const MOCK_NOTIFICATIONS = [
 
 export default function Notifications() {
     const insets = useSafeAreaInsets();
+    const { colors, spacing } = useTheme();
 
     const renderItem = ({ item }: { item: typeof MOCK_NOTIFICATIONS[0] }) => (
         <View

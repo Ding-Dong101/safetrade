@@ -1,9 +1,10 @@
 import { View, Text } from "react-native";
-import { colors, spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function History() {
     const insets = useSafeAreaInsets();
+    const { colors, spacing } = useTheme();
 
     return (
         <View

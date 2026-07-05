@@ -1,7 +1,7 @@
 import { View, Text, FlatList } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { useRole } from "@/hooks/useRole";
 import { useAuth } from "@/hooks/useAuth";
 import { useTrades } from "@/hooks/useTrades";
@@ -19,6 +19,7 @@ export default function Home() {
     const { activeRole } = useRole();
     const { user } = useAuth();
     const { trades, isLoading } = useTrades();
+    const { colors, spacing } = useTheme();
 
     const handleTradePress = (trade: Trade) => {
         router.push(`/trade/${trade.id}` as any);

@@ -4,6 +4,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { colors, spacing } from "@/constants/theme";
 import { RiderJob } from "@/types/rider";
+import { useState } from "react";
 
 interface DeliveryCardProps {
     job: RiderJob;
