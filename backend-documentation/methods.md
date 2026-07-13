@@ -1,4 +1,4 @@
-Absolutely. Below is a **complete definition of backend methods** (REST API endpoints) for each Spring Boot microservice in SafeTrade. I've also included **implementation tips** for each method to help your team get started.
+Below is a **complete definition of backend methods** (REST API endpoints) for each Spring Boot microservice in SafeTrade. I've also included **implementation tips** for each method to help your team get started.
 
 ---
 
