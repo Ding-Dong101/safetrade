@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="336bd4c8-75d4-4de9-8687-b4e1cbe40d50" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/RNCC.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/(auth)/_layout.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/(auth)/sign-in.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/(auth)/sign-up.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/(tabs)/home.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/(tabs)/insights.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/(tabs)/settings.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/(tabs)/subscriptions.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/Subscriptions/[id].tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/index.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/onboarding.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/expo.icon/Assets/expo-symbol 2.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/expo.icon/Assets/grid.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/expo.icon/icon.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/fonts/PlusJakartaSans-Bold.ttf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/fonts/PlusJakartaSans-ExtraBold.ttf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/fonts/PlusJakartaSans-Light.ttf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/fonts/PlusJakartaSans-Medium.ttf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/fonts/PlusJakartaSans-Regular.ttf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/fonts/PlusJakartaSans-SemiBold.ttf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/activity.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/add.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/adobe.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/back.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/canva.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/claude.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/dropbox.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/figma.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/github.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/home.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/logo.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/medium.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/menu.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/netflix.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/notion.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/openai.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/plus.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/setting.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/spotify.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/icons/wallet.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/images/avatar.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/images/expo-badge-white.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/images/expo-badge.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/images/expo-logo.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/images/logo-glow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/images/splash-pattern.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/images/tabIcons/explore.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/images/tabIcons/explore@2x.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/images/tabIcons/explore@3x.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/images/tabIcons/home.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/images/tabIcons/home@2x.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/images/tabIcons/home@3x.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/images/tutorial-web.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/constants/data.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/constants/icons.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/global.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/image.d.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/metro.config.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/nativewind-env.d.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/postcss.config.mjs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/type.d.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(tabs)/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/explore.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(tabs)/index.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/modal.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/images/icon.png" beforeDir="false" afterPath="$PROJECT_DIR$/assets/images/icon.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/images/partial-react-logo.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/images/splash-icon.png" beforeDir="false" afterPath="$PROJECT_DIR$/assets/images/splash-icon.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/external-link.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/haptic-tab.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/hello-wave.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/parallax-scroll-view.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/themed-text.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/themed-view.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/ui/collapsible.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/ui/icon-symbol.ios.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/ui/icon-symbol.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/constants/theme.ts" beforeDir="false" afterPath="$PROJECT_DIR$/constants/theme.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hooks/use-color-scheme.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hooks/use-color-scheme.web.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hooks/use-theme-color.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/reset-project.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.json" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.0" />
+      <entry key="MS500" value="1.0000113260160113" />
+      <entry key="S2" value="1.058012194290296" />
+      <entry key="S5" value="1.3201899653324425" />
+      <entry key="S10" value="1.5658533128965915" />
+      <entry key="S30" value="1.8383242939565227" />
+      <entry key="S60" value="2.336974669969699" />
+      <entry key="M2" value="4.890009515180393" />
+      <entry key="M5" value="15.364342355676875" />
+      <entry key="M10" value="29.73724655609245" />
+      <entry key="M15" value="39.77074704913729" />
+      <entry key="M30" value="59.495356284657234" />
+      <entry key="H1" value="94.37099781482229" />
+      <entry key="H2" value="180.81690340607918" />
+      <entry key="H4" value="349.4590676212838" />
+      <entry key="D1" value="907.8283184655824" />
+      <entry key="W1" value="1140.073197853164" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="8.10060911344321E-236" />
+      <entry key="S10" value="2.8461569024639563E-118" />
+      <entry key="S30" value="6.577885043236909E-40" />
+      <entry key="S60" value="2.564738786550575E-20" />
+      <entry key="M2" value="1.6014801861248802E-10" />
+      <entry key="M5" value="1.20728279413761E-4" />
+      <entry key="M10" value="0.010998363186892896" />
+      <entry key="M15" value="0.04996786278899731" />
+      <entry key="M30" value="0.2569438431970246" />
+      <entry key="H1" value="0.8265912302843947" />
+      <entry key="H2" value="2.1627998527118852" />
+      <entry key="H4" value="4.690328157389174" />
+      <entry key="D1" value="13.487084748337804" />
+      <entry key="W1" value="17.239038438763064" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="8.08599190382761E-8" />
+      <entry key="MS500" value="0.03815847877623046" />
+      <entry key="S2" value="0.4864036846126879" />
+      <entry key="S5" value="1.0091766034870484" />
+      <entry key="S10" value="1.3858130825222006" />
+      <entry key="S30" value="1.770763610612633" />
+      <entry key="S60" value="2.301682946664808" />
+      <entry key="M2" value="4.866270340039449" />
+      <entry key="M5" value="15.322740310874064" />
+      <entry key="M10" value="29.69885179711029" />
+      <entry key="M15" value="39.77494320693887" />
+      <entry key="M30" value="59.71699381365036" />
+      <entry key="H1" value="95.15950781692489" />
+      <entry key="H2" value="182.92929660921425" />
+      <entry key="H4" value="354.098249239878" />
+      <entry key="D1" value="921.2957272882371" />
+      <entry key="W1" value="1157.3088505757455" />
+    </decayedShown>
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="DEPENDENCY_CHECKER_PROBLEMS_TAB" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2,
+  &quot;fromUser&quot;: false
+}</component>
+  <component name="ProjectId" id="3EigmIjXOuzeYSnfp4PHRxgOQ88" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;javascript.preferred.runtime.type.id&quot;: &quot;node&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Heward Mills/OneDrive/Desktop/RNCC/app/(tabs)&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Users\\Heward Mills\\OneDrive\\Desktop\\RNCC\\node_modules\\typescript\\lib&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Heward Mills\OneDrive\Desktop\RNCC\app\(tabs)" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Heward Mills\OneDrive\Desktop\RNCC\app" />
+      <recent name="C:\Users\Heward Mills\OneDrive\Desktop\RNCC\app\(tabs)" />
+      <recent name="C:\Users\Heward Mills\OneDrive\Desktop\RNCC\app\Subscriptions" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-WS-261.24374.125" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="336bd4c8-75d4-4de9-8687-b4e1cbe40d50" name="Changes" comment="" />
+      <created>1780666970320</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1780666970320</updated>
+      <workItem from="1780666978677" duration="11389000" />
+      <workItem from="1780719964332" duration="11086000" />
+      <workItem from="1780735283826" duration="6167000" />
+      <workItem from="1780792350035" duration="11975000" />
+      <workItem from="1780805304068" duration="9774000" />
+      <workItem from="1780817548566" duration="1133000" />
+      <workItem from="1780821062153" duration="3159000" />
+      <workItem from="1780828189805" duration="1724000" />
+      <workItem from="1780882924060" duration="25042000" />
+      <workItem from="1780909528160" duration="1909000" />
+      <workItem from="1780960871902" duration="2829000" />
+      <workItem from="1780985318022" duration="10154000" />
+      <workItem from="1781069906763" duration="635000" />
+      <workItem from="1781080068404" duration="2007000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/constants/icons.ts</url>
+          <line>6</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>
