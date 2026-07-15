@@ -35,22 +35,46 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
                         color: colors.foreground,
                         fontSize: 15,
                         fontWeight: "600",
+                        flex: 1,
+                        marginRight: spacing[2],
                     }}
+                    numberOfLines={1}
                 >
                     {trade.title ?? "Trade"}
                 </Text>
                 <TradeStatusBadge status={trade.status} />
             </View>
 
-            <Text
+            <View
                 style={{
-                    color: colors.muted,
-                    fontSize: 12,
-                    marginBottom: spacing[1],
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: spacing[2],
                 }}
             >
-                ID: {trade.id}
-            </Text>
+                <Text
+                    style={{
+                        color: colors.muted,
+                        fontSize: 12,
+                        flex: 1,
+                        marginRight: spacing[2],
+                    }}
+                    numberOfLines={1}
+                >
+                    ID: {trade.id}
+                </Text>
+                <Text
+                    style={{
+                        color: colors.foreground,
+                        fontSize: 18,
+                        fontWeight: "700",
+                        fontVariant: ["tabular-nums"],
+                    }}
+                >
+                    {formatCurrency(trade.price)}
+                </Text>
+            </View>
 
             {showPickupCode && (
                 <Text
@@ -77,17 +101,6 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
                     Dispatch Code: {trade.dispatchCode}
                 </Text>
             )}
-
-            <Text
-                style={{
-                    color: colors.foreground,
-                    fontSize: 18,
-                    fontWeight: "700",
-                    marginBottom: spacing[1],
-                }}
-            >
-                {formatCurrency(trade.price)}
-            </Text>
 
             {pendingVerification && (
                 <Text

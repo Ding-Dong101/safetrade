@@ -41,9 +41,10 @@ const BalanceCard = ({
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "flex-start",
+                    gap: spacing[3],
                 }}
             >
-                <View>
+                <View style={{ flex: 1 }}>
                     <Text
                         style={{
                             color: colors.muted,
@@ -61,13 +62,16 @@ const BalanceCard = ({
                             color: colors.foreground,
                             fontSize: 24,
                             fontWeight: "800",
+                            fontVariant: ["tabular-nums"],
                         }}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
                     >
                         {formatCurrency(available)}
                     </Text>
                 </View>
 
-                <View style={{ alignItems: "flex-end" }}>
+                <View style={{ flex: 1, alignItems: "flex-end" }}>
                     <Text
                         style={{
                             color: colors.muted,
@@ -85,7 +89,10 @@ const BalanceCard = ({
                             color: colors.foreground,
                             fontSize: 24,
                             fontWeight: "800",
+                            fontVariant: ["tabular-nums"],
                         }}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
                     >
                         {formatCurrency(total)}
                     </Text>

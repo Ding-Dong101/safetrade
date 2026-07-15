@@ -21,16 +21,17 @@ const TabIcon = ({
     focused: boolean;
     name: keyof typeof Ionicons.glyphMap;
 }) => {
-    const { colors } = useTheme();
+    const { colors, components } = useTheme();
+    const frame = components.tabBar.iconFrame;
 
     return (
         <View
             style={{
                 alignItems: "center",
                 justifyContent: "center",
-                width: 40,
-                height: 40,
-                borderRadius: 20,
+                width: frame,
+                height: frame,
+                borderRadius: frame / 2,
                 backgroundColor: focused ? colors.primary + "20" : "transparent",
             }}
         >
@@ -56,19 +57,34 @@ const PortalTabs = ({ tabs }: PortalTabsProps) => {
                 sceneStyle: { backgroundColor: colors.background },
                 tabBarStyle: {
                     position: "absolute",
-                    bottom: insets.bottom > 0 ? 14 : 8,
+                    bottom: insets.bottom > 0 ? insets.bottom : 12,
                     marginHorizontal: tabBar.horizontalInset,
                     height: tabBar.height,
                     borderRadius: tabBar.radius,
                     backgroundColor: colors.card,
-                    borderTopWidth: 0,
+                    borderTopWidth: 1,
+                    borderWidth: 1,
                     borderColor: colors.border,
-                    elevation: 0,
+                    // Kill the safe-area padding the navigator injects into the
+                    // bar — it pushes icons off-center in a fixed-height pill.
+                    paddingBottom: 0,
+                    paddingTop: 0,
+                    elevation: 8,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 12,
                 },
                 tabBarItemStyle: {
                     height: tabBar.height,
+                    paddingVertical: 0,
                     justifyContent: "center",
                     alignItems: "center",
+                },
+                tabBarIconStyle: {
+                    flex: 1,
+                    alignItems: "center",
+                    justifyContent: "center",
                 },
             }}
         >
