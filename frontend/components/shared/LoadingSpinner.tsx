@@ -1,5 +1,5 @@
 import { View, ActivityIndicator, Text, ViewStyle } from "react-native";
-import { colors, spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 
 interface LoadingSpinnerProps {
     message?: string;
@@ -12,6 +12,8 @@ const LoadingSpinner = ({
     size = "large",
     style,
 }: LoadingSpinnerProps) => {
+    const { colors, spacing } = useTheme();
+
     return (
         <View
             style={[

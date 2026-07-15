@@ -3,7 +3,11 @@
     "strict": true,
     "jsx": "react-native",
     "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
   "extends": "expo/tsconfig.base"
 }

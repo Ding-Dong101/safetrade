@@ -1,11 +1,12 @@
 import { View, Text, TouchableOpacity } from "react-native";
-import { colors, spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { Ionicons } from "@expo/vector-icons";
 
 interface BalanceCardProps {
     available: number;
     total: number;
+    escrow?: number;
     activeDeals?: number;
     onTopUp?: () => void;
 }
@@ -13,9 +14,12 @@ interface BalanceCardProps {
 const BalanceCard = ({
     available,
     total,
+    escrow,
     activeDeals = 0,
     onTopUp,
 }: BalanceCardProps) => {
+    const { colors, spacing } = useTheme();
+
     return (
         <View
             style={{
@@ -36,7 +40,7 @@ const BalanceCard = ({
                 style={{
                     flexDirection: "row",
                     justifyContent: "space-between",
-                    alignItems: "center",
+                    alignItems: "flex-start",
                 }}
             >
                 <View>
@@ -50,7 +54,7 @@ const BalanceCard = ({
                             marginBottom: 4,
                         }}
                     >
-                        Available Balance
+                        Available
                     </Text>
                     <Text
                         style={{
@@ -63,46 +67,7 @@ const BalanceCard = ({
                     </Text>
                 </View>
 
-                {onTopUp && (
-                    <TouchableOpacity
-                        onPress={onTopUp}
-                        activeOpacity={0.7}
-                        style={{
-                            borderWidth: 1.5,
-                            borderColor: colors.primary,
-                            paddingHorizontal: spacing[4],
-                            paddingVertical: spacing[2],
-                            borderRadius: 10,
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 6,
-                        }}
-                    >
-                        <Ionicons name="add" size={16} color={colors.primary} />
-                        <Text
-                            style={{
-                                color: colors.primary,
-                                fontSize: 13,
-                                fontWeight: "700",
-                            }}
-                        >
-                            Top Up
-                        </Text>
-                    </TouchableOpacity>
-                )}
-            </View>
-
-            {/* Divider line */}
-            <View style={{ height: 1, backgroundColor: colors.border }} />
-
-            <View
-                style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                }}
-            >
-                <View>
+                <View style={{ alignItems: "flex-end" }}>
                     <Text
                         style={{
                             color: colors.muted,
@@ -113,41 +78,84 @@ const BalanceCard = ({
                             marginBottom: 4,
                         }}
                     >
-                        Total Balance
+                        Total
                     </Text>
                     <Text
                         style={{
                             color: colors.foreground,
-                            fontSize: 20,
-                            fontWeight: "700",
+                            fontSize: 24,
+                            fontWeight: "800",
                         }}
                     >
                         {formatCurrency(total)}
                     </Text>
                 </View>
+            </View>
 
-                <View style={{ flexDirection: "row", gap: spacing[5] }}>
-                    <View style={{ alignItems: "flex-end" }}>
+            <View style={{ height: 1, backgroundColor: colors.border }} />
+
+            <View
+                style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                }}
+            >
+                <View>
+                    {escrow !== undefined && (
                         <Text
                             style={{
                                 color: colors.primary,
-                                fontSize: 18,
-                                fontWeight: "800",
+                                fontSize: 13,
+                                fontWeight: "700",
                             }}
                         >
-                            {activeDeals}
+                            {formatCurrency(escrow)}{" "}
+                            <Text style={{ color: colors.muted, fontWeight: "500" }}>
+                                in escrow
+                            </Text>
                         </Text>
+                    )}
+                    <Text
+                        style={{
+                            color: colors.muted,
+                            fontSize: 13,
+                            marginTop: 2,
+                        }}
+                    >
+                        <Text style={{ color: colors.foreground, fontWeight: "700" }}>
+                            {activeDeals}
+                        </Text>{" "}
+                        Active Deals
+                    </Text>
+                </View>
+
+                {onTopUp && (
+                    <TouchableOpacity
+                        onPress={onTopUp}
+                        activeOpacity={0.7}
+                        style={{
+                            backgroundColor: colors.primary,
+                            paddingHorizontal: spacing[4],
+                            paddingVertical: spacing[2],
+                            borderRadius: 10,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 6,
+                        }}
+                    >
+                        <Ionicons name="add" size={16} color={colors.background} />
                         <Text
                             style={{
-                                color: colors.primary + "b0",
-                                fontSize: 11,
-                                fontWeight: "600",
+                                color: colors.background,
+                                fontSize: 13,
+                                fontWeight: "700",
                             }}
                         >
-                            Active Deals
+                            Top Up
                         </Text>
-                    </View>
-                </View>
+                    </TouchableOpacity>
+                )}
             </View>
         </View>
     );

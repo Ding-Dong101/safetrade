@@ -1,5 +1,5 @@
 import { View, ViewStyle, TouchableOpacity } from "react-native";
-import { colors } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 
 interface CardProps {
     children: React.ReactNode;
@@ -8,43 +8,29 @@ interface CardProps {
 }
 
 const Card = ({ children, style, onPress }: CardProps) => {
+    const { colors } = useTheme();
+
+    const baseStyle: ViewStyle = {
+        backgroundColor: colors.card,
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: colors.border,
+    };
+
     if (onPress) {
         return (
             <TouchableOpacity
                 onPress={onPress}
                 activeOpacity={0.8}
-                style={[
-                    {
-                        backgroundColor: colors.card,
-                        borderRadius: 12,
-                        padding: 16,
-                        borderWidth: 1,
-                        borderColor: colors.border,
-                    },
-                    style,
-                ]}
+                style={[baseStyle, style]}
             >
                 {children}
             </TouchableOpacity>
         );
     }
 
-    return (
-        <View
-            style={[
-                {
-                    backgroundColor: colors.card,
-                    borderRadius: 12,
-                    padding: 16,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                },
-                style,
-            ]}
-        >
-            {children}
-        </View>
-    );
+    return <View style={[baseStyle, style]}>{children}</View>;
 };
 
-export default Card; 
+export default Card;

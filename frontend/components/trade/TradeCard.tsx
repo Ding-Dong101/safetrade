@@ -2,17 +2,24 @@ import { View, Text } from "react-native";
 import Card from "@/components/ui/Card";
 import TradeStatusBadge from "./TradeStatusBadge";
 import TradeStatusBar from "./TradeStatusBar";
-import { colors, spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { Trade } from "@/types/trade";
 import { formatCurrency } from "@/utils/formatCurrency";
-import { formatRelativeTime } from "@/utils/formatDate";
+import { Role } from "@/types/auth";
 
 interface TradeCardProps {
     trade: Trade;
+    role?: Role;
     onPress?: () => void;
 }
 
-const TradeCard = ({ trade, onPress }: TradeCardProps) => {
+const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
+    const { colors, spacing } = useTheme();
+
+    const showPickupCode = role === "buyer" && trade.status === "AT_POST" && trade.releaseCode;
+    const showDispatchCode = role === "seller" && trade.status === "DISPATCH_PENDING" && trade.dispatchCode;
+    const pendingVerification = trade.status === "FUNDED";
+
     return (
         <Card onPress={onPress} style={{ marginBottom: spacing[3] }}>
             <View
@@ -30,14 +37,50 @@ const TradeCard = ({ trade, onPress }: TradeCardProps) => {
                         fontWeight: "600",
                     }}
                 >
-                    {trade.buyerId ? `Buyer ${trade.buyerId.substring(0, 8)}` : "Unknown Buyer"}
+                    {trade.title ?? "Trade"}
                 </Text>
                 <TradeStatusBadge status={trade.status} />
             </View>
 
             <Text
                 style={{
-                    color: colors.primary,
+                    color: colors.muted,
+                    fontSize: 12,
+                    marginBottom: spacing[1],
+                }}
+            >
+                ID: {trade.id}
+            </Text>
+
+            {showPickupCode && (
+                <Text
+                    style={{
+                        color: colors.foreground,
+                        fontSize: 13,
+                        fontWeight: "600",
+                        marginBottom: spacing[1],
+                    }}
+                >
+                    Pick-Up Code: {trade.releaseCode}
+                </Text>
+            )}
+
+            {showDispatchCode && (
+                <Text
+                    style={{
+                        color: colors.foreground,
+                        fontSize: 13,
+                        fontWeight: "600",
+                        marginBottom: spacing[1],
+                    }}
+                >
+                    Dispatch Code: {trade.dispatchCode}
+                </Text>
+            )}
+
+            <Text
+                style={{
+                    color: colors.foreground,
                     fontSize: 18,
                     fontWeight: "700",
                     marginBottom: spacing[1],
@@ -46,28 +89,31 @@ const TradeCard = ({ trade, onPress }: TradeCardProps) => {
                 {formatCurrency(trade.price)}
             </Text>
 
+            {pendingVerification && (
+                <Text
+                    style={{
+                        color: colors.accent,
+                        fontSize: 12,
+                        fontWeight: "600",
+                        marginBottom: spacing[1],
+                    }}
+                >
+                    Pending Photo Verification.
+                </Text>
+            )}
+
             {trade.description && (
                 <Text
                     style={{
                         color: colors.muted,
                         fontSize: 13,
-                        marginBottom: spacing[2],
+                        marginBottom: spacing[1],
                     }}
                     numberOfLines={2}
                 >
                     {trade.description}
                 </Text>
             )}
-
-            <Text
-                style={{
-                    color: colors.mutedForeground,
-                    fontSize: 11,
-                    marginBottom: spacing[1],
-                }}
-            >
-                {formatRelativeTime(trade.createdAt)}
-            </Text>
 
             <TradeStatusBar status={trade.status} />
         </Card>

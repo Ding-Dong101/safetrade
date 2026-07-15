@@ -1,5 +1,5 @@
 import { View, Text } from "react-native";
-import { colors } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { TradeStatus } from "@/types/trade";
 
 interface TradeStatusBarProps {
@@ -25,6 +25,7 @@ const normalizeStatus = (s: string): string => {
 };
 
 const TradeStatusBar = ({ status }: TradeStatusBarProps) => {
+    const { colors } = useTheme();
     const normalized = normalizeStatus(status);
     const currentIndex = STEPS.indexOf(normalized);
 

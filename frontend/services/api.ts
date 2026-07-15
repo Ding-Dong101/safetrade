@@ -1,38 +1,40 @@
-import { create } from "axios";
-import { useAuthStore } from "../store/authStore";
+import { useAuthStore } from "@/store/authStore";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
-const api = create({
-    baseURL: BASE_URL,
-    timeout: 10000,
-    headers: {
-        "Content-Type": "application/json",
-    },
-});
+const request = async <T = any>(
+    method: string,
+    path: string,
+    body?: unknown
+): Promise<{ data: T }> => {
+    const token = useAuthStore.getState().token;
 
-// Attach token to every request automatically
-api.interceptors.request.use(
-    (config) => {
-        const token = useAuthStore.getState().token;
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
+    const response = await fetch(`${BASE_URL}${path}`, {
+        method,
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
 
-// Handle global response errors
-api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            // Handle unauthorized - will trigger logout later
-            console.warn("Unauthorized. Please log in again.");
-        }
-        return Promise.reject(error);
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+        const error: any = new Error(data?.message ?? `Request failed (${response.status})`);
+        error.response = { status: response.status, data };
+        throw error;
     }
-);
+
+    return { data };
+};
+
+const api = {
+    get: <T = any>(path: string) => request<T>("GET", path),
+    post: <T = any>(path: string, body?: unknown) => request<T>("POST", path, body),
+    put: <T = any>(path: string, body?: unknown) => request<T>("PUT", path, body),
+    patch: <T = any>(path: string, body?: unknown) => request<T>("PATCH", path, body),
+    delete: <T = any>(path: string) => request<T>("DELETE", path),
+};
 
 export default api;

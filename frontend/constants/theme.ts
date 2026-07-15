@@ -1,14 +1,7 @@
-<<<<<<< HEAD
-export const colors = {
+export const darkColors = {
     background: "#0b0e14",
     card: "#161b22",
     cardAlt: "#21262d",
-=======
-export const darkColors = {
-    background: "#0d0d0d",
-    card: "#1a1a1a",
-    cardAlt: "#222222",
->>>>>>> 7b23cc6e8eaeaf9b6fa7e7c8cd25be6ae240ad35
     foreground: "#ffffff",
     muted: "rgba(255,255,255,0.5)",
     mutedForeground: "rgba(255,255,255,0.3)",
