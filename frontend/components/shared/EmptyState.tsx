@@ -1,5 +1,5 @@
 import { View, Text, ViewStyle } from "react-native";
-import { colors, spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import Button from "@/components/ui/Button";
 
 interface EmptyStateProps {
@@ -17,6 +17,8 @@ const EmptyState = ({
     onAction,
     style,
 }: EmptyStateProps) => {
+    const { colors, spacing } = useTheme();
+
     return (
         <View
             style={[

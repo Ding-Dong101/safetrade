@@ -1,11 +1,11 @@
-import { View, Text, Image, ImageSourcePropType, ViewStyle } from "react-native";
+import { View, Text, Image, ImageSourcePropType, ImageStyle, ViewStyle } from "react-native";
 import { colors } from "@/constants/theme";
 
 interface AvatarProps {
     name?: string;
     source?: ImageSourcePropType;
     size?: number;
-    style?: ViewStyle;
+    style?: ViewStyle & ImageStyle;
 }
 
 const getInitials = (name: string): string => {

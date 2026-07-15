@@ -92,7 +92,7 @@ export default function TradeDetails() {
                             fontWeight: "700",
                         }}
                     >
-                        {formatCurrency(selectedTrade.amount)}
+                        {formatCurrency(selectedTrade.price)}
                     </Text>
                 </Card>
 
@@ -101,11 +101,11 @@ export default function TradeDetails() {
                     {[
                         {
                             label: "Buyer",
-                            value: selectedTrade.buyerUsername,
+                            value: selectedTrade.buyerId || "—",
                         },
                         {
                             label: "Seller",
-                            value: selectedTrade.sellerUsername,
+                            value: selectedTrade.sellerId || "—",
                         },
                         {
                             label: "Created",

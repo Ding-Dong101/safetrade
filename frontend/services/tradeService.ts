@@ -1,53 +1,93 @@
-import api from "./api";
-import { Trade, CreateTradePayload } from "@/types/trade";
+import { CreateTradePayload, Trade, TradeStatus } from "@/types/trade";
+import { Role } from "@/types/auth";
+import { MOCK_TRADES } from "@/constants/data";
 
-export const getTrades = async (role?: string): Promise<Trade[]> => {
-    const response = await api.get("/trades/", {
-        params: role ? { role } : {},
-    });
-    return response.data;
+// Mock trade service — keeps an in-memory copy of the mock trades so screens can
+// create/accept/update trades. Swap for real API calls when the backend is ready.
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+let trades: Trade[] = [...MOCK_TRADES];
+
+const generateCode = () =>
+    Math.random().toString(36).substring(2, 8).toUpperCase();
+
+export const getTrades = async (_role: Role): Promise<Trade[]> => {
+    await delay(400);
+    return [...trades];
 };
 
-export const getTradeById = async (id: string): Promise<Trade> => {
-    const response = await api.get(`/trades/${id}`);
-    return response.data;
+export const getTradeById = async (id: string): Promise<Trade | undefined> => {
+    await delay(300);
+    return trades.find((trade) => trade.id === id);
 };
 
-export const createTrade = async (payload: CreateTradePayload): Promise<Trade> => {
-    const response = await api.post("/trades/", payload);
-    return response.data;
+export const createTrade = async (
+    payload: CreateTradePayload
+): Promise<{ trade: Trade; tradeCode: string }> => {
+    await delay(600);
+
+    const tradeCode = generateCode();
+    const trade: Trade = {
+        id: `${tradeCode}-${trades.length + 1}`,
+        buyerId: "",
+        sellerId: payload.sellerId,
+        title: payload.title,
+        description: payload.description,
+        price: payload.price,
+        status: "CREATED",
+        createdAt: new Date().toISOString(),
+    };
+
+    trades = [trade, ...trades];
+    return { trade, tradeCode };
 };
 
-export const depositFunds = async (tradeId: string): Promise<Trade> => {
-    const response = await api.post(`/trades/${tradeId}/deposit`);
-    return response.data;
+export const acceptTradeByCode = async (code: string): Promise<Trade> => {
+    await delay(600);
+
+    const normalized = code.trim().toUpperCase();
+    if (normalized.length < 4) {
+        throw new Error("Invalid trade code");
+    }
+
+    const matched = trades.find((trade) =>
+        trade.id.toUpperCase().startsWith(normalized)
+    );
+
+    if (matched) {
+        matched.buyerId = "buyer-001";
+        matched.status = "PENDING";
+        return { ...matched };
+    }
+
+    // Unknown codes create a fresh pending trade so the mock flow always works.
+    const trade: Trade = {
+        id: `${normalized}-${trades.length + 1}`,
+        buyerId: "buyer-001",
+        sellerId: "seller-001",
+        title: "New Trade",
+        description: "Accepted via trade code.",
+        price: 0,
+        status: "PENDING",
+        createdAt: new Date().toISOString(),
+    };
+
+    trades = [trade, ...trades];
+    return trade;
 };
 
-export const verifyTradePhoto = async (tradeId: string, photoBase64: string): Promise<Trade> => {
-    const response = await api.post(`/trades/${tradeId}/seller-upload`, {
-        itemPhotoBase64: photoBase64,
-    });
-    return response.data;
-};
+export const updateTradeStatus = async (
+    tradeId: string,
+    status: TradeStatus
+): Promise<Trade> => {
+    await delay(300);
 
-export const confirmRiderPickup = async (tradeId: string, riderId: string, dispatchCode: string): Promise<Trade> => {
-    const response = await api.post(`/trades/${tradeId}/rider-pickup`, {
-        riderId,
-        dispatchCode,
-    });
-    return response.data;
-};
+    const trade = trades.find((item) => item.id === tradeId);
+    if (!trade) {
+        throw new Error("Trade not found");
+    }
 
-export const confirmPostDropoff = async (tradeId: string, dropOffCode: string): Promise<Trade> => {
-    const response = await api.post(`/trades/${tradeId}/post-dropoff`, {
-        dropOffCode,
-    });
-    return response.data;
+    trade.status = status;
+    return { ...trade };
 };
-
-export const confirmBuyerCollect = async (tradeId: string, releaseCode: string): Promise<Trade> => {
-    const response = await api.post(`/trades/${tradeId}/buyer-collect`, {
-        releaseCode,
-    });
-    return response.data;
-};

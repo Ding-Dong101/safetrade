@@ -1,5 +1,5 @@
 import { View, Text, TextInput, TextInputProps, ViewStyle } from "react-native";
-import { colors } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 
 interface InputProps extends TextInputProps {
     label?: string;
@@ -8,6 +8,8 @@ interface InputProps extends TextInputProps {
 }
 
 const Input = ({ label, error, containerStyle, ...props }: InputProps) => {
+    const { colors } = useTheme();
+
     return (
         <View style={[{ marginBottom: 16 }, containerStyle]}>
             {label && (
@@ -27,7 +29,7 @@ const Input = ({ label, error, containerStyle, ...props }: InputProps) => {
                 style={[
                     {
                         backgroundColor: colors.card,
-                        color: "#FFFFFF",
+                        color: colors.foreground,
                         borderRadius: 8,
                         paddingVertical: 12,
                         paddingHorizontal: 16,

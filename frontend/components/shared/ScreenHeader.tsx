@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { colors, spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 
 interface ScreenHeaderProps {
     title: string;
@@ -10,6 +10,7 @@ interface ScreenHeaderProps {
 
 const ScreenHeader = ({ title, showBack = true, rightElement }: ScreenHeaderProps) => {
     const router = useRouter();
+    const { colors, spacing } = useTheme();
 
     return (
         <View

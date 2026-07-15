@@ -1,5 +1,5 @@
 import { View, Text, ViewStyle } from "react-native";
-import { colors } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { TradeStatus } from "@/types/trade";
 import { formatTradeStatus } from "@/utils/formatStatus";
 
@@ -11,16 +11,6 @@ interface BadgeProps {
     variant?: BadgeVariant;
     style?: ViewStyle;
 }
-
-const variantColors: Record<BadgeVariant, { bg: string; text: string }> = {
-    primary: { bg: colors.primary, text: colors.background },
-    warning: { bg: colors.warning, text: colors.background },
-    danger: { bg: colors.danger, text: colors.foreground },
-    success: { bg: colors.success, text: colors.foreground },
-    info: { bg: colors.info, text: colors.foreground },
-    purple: { bg: colors.purple, text: colors.foreground },
-    muted: { bg: colors.card, text: colors.muted },
-};
 
 const statusVariantMap: Record<string, BadgeVariant> = {
     created: "warning",
@@ -37,6 +27,18 @@ const statusVariantMap: Record<string, BadgeVariant> = {
 };
 
 const Badge = ({ label, status, variant, style }: BadgeProps) => {
+    const { colors } = useTheme();
+
+    const variantColors: Record<BadgeVariant, { bg: string; text: string }> = {
+        primary: { bg: colors.primary, text: colors.background },
+        warning: { bg: colors.warning, text: "#1a1a1a" },
+        danger: { bg: colors.danger, text: "#ffffff" },
+        success: { bg: colors.success, text: "#ffffff" },
+        info: { bg: colors.info, text: "#ffffff" },
+        purple: { bg: colors.purple, text: "#ffffff" },
+        muted: { bg: colors.cardAlt, text: colors.muted },
+    };
+
     const normalizedStatus = status ? status.toLowerCase() : "";
     const resolvedVariant = variant ?? (status ? (statusVariantMap[normalizedStatus] ?? "muted") : "muted");
     const resolvedLabel = label ?? (status ? formatTradeStatus(status as any) : "");

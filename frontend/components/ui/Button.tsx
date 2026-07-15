@@ -1,5 +1,5 @@
 import { TouchableOpacity, Text, ActivityIndicator, ViewStyle, TextStyle } from "react-native";
-import { colors } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 
 type ButtonVariant = "primary" | "secondary" | "outlined" | "danger" | "warning";
 
@@ -13,29 +13,6 @@ interface ButtonProps {
     textStyle?: TextStyle;
 }
 
-const variantStyles: Record<ButtonVariant, { container: ViewStyle; text: TextStyle }> = {
-    primary: {
-        container: { backgroundColor: colors.primary },
-        text: { color: colors.background },
-    },
-    secondary: {
-        container: { backgroundColor: colors.card },
-        text: { color: colors.foreground },
-    },
-    outlined: {
-        container: { backgroundColor: "transparent", borderWidth: 1, borderColor: colors.primary },
-        text: { color: colors.primary },
-    },
-    danger: {
-        container: { backgroundColor: colors.danger },
-        text: { color: colors.foreground },
-    },
-    warning: {
-        container: { backgroundColor: colors.warning },
-        text: { color: colors.background },
-    },
-};
-
 const Button = ({
     label,
     onPress,
@@ -45,6 +22,31 @@ const Button = ({
     style,
     textStyle,
 }: ButtonProps) => {
+    const { colors } = useTheme();
+
+    const variantStyles: Record<ButtonVariant, { container: ViewStyle; text: TextStyle }> = {
+        primary: {
+            container: { backgroundColor: colors.primary },
+            text: { color: colors.background },
+        },
+        secondary: {
+            container: { backgroundColor: colors.card },
+            text: { color: colors.foreground },
+        },
+        outlined: {
+            container: { backgroundColor: "transparent", borderWidth: 1, borderColor: colors.primary },
+            text: { color: colors.primary },
+        },
+        danger: {
+            container: { backgroundColor: colors.danger },
+            text: { color: "#ffffff" },
+        },
+        warning: {
+            container: { backgroundColor: colors.warning },
+            text: { color: colors.background },
+        },
+    };
+
     const { container, text } = variantStyles[variant];
 
     return (
