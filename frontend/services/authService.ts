@@ -2,62 +2,38 @@ import {
     AuthResponse,
     LoginCredentials,
     RegisterCredentials,
-    User,
 } from "@/types/auth";
-import { MOCK_USER } from "@/constants/data";
+import api from "@/services/api";
 
-// Mock auth service — replace with real API calls (see services/api.ts) when the
-// backend endpoints are wired up.
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const buildUser = (username: string, overrides: Partial<User> = {}): User => ({
-    id: "user-001",
-    firstName: MOCK_USER.name,
-    lastName: "Mensah",
-    username,
-    email: MOCK_USER.email,
-    isAdmin: false,
-    createdAt: new Date().toISOString(),
-    balance: MOCK_USER.availableBalance,
-    ...overrides,
-});
+// Real auth service backed by the Spring Boot API (/api/users).
+// Backend returns: { token, userId, name, user: { id, firstName, lastName, username, email, isAdmin, balance, createdAt } }
 
 export const login = async (
     credentials: LoginCredentials
 ): Promise<AuthResponse> => {
-    await delay(600);
+    const { data } = await api.post("/users/login", {
+        username: credentials.username,
+        password: credentials.password,
+    });
 
-    if (!credentials.username || !credentials.password) {
-        throw new Error("Username and password are required");
-    }
-
-    return {
-        user: buildUser(credentials.username),
-        token: "mock-jwt-token",
-    };
+    return { user: data.user, token: data.token };
 };
 
 export const register = async (
     credentials: RegisterCredentials
 ): Promise<AuthResponse> => {
-    await delay(800);
+    // Backend Users entity uses lowercase field names (firstname/lastname).
+    const { data } = await api.post("/users/register", {
+        username: credentials.username,
+        firstname: credentials.firstName,
+        lastname: credentials.lastName,
+        email: credentials.email,
+        password: credentials.password,
+    });
 
-    if (!credentials.username || !credentials.password) {
-        throw new Error("Username and password are required");
-    }
-
-    return {
-        user: buildUser(credentials.username, {
-            firstName: credentials.firstName,
-            lastName: credentials.lastName,
-            email: credentials.email,
-            phone: credentials.phone,
-        }),
-        token: "mock-jwt-token",
-    };
+    return { user: data.user, token: data.token };
 };
 
 export const logout = async (): Promise<void> => {
-    await delay(200);
+    // No backend logout endpoint (stateless JWT) — clearing the store is enough.
 };

@@ -22,13 +22,16 @@ public class Trades {
     @Column(nullable = false)
     private String title;
 
+   @Column(unique = true)
+   private String tradeCode;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(nullable = false)
     private Double price;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String buyerId;
 
     @Column(nullable = false)

@@ -42,7 +42,6 @@ public class TradesController {
         }
     }
 
-    // Get all trades or filter by authenticated user and role
     @GetMapping("/")
     public List<Trades> getAll(@RequestHeader(value = "Authorization", required = false) String authHeader,
                                @RequestParam(value = "role", required = false) String role) {
@@ -50,7 +49,6 @@ public class TradesController {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             userId = authHeader.substring(7).trim();
             try {
-                // Since JwtService isn't injected here, we just use the raw token or rely on SecurityContext
                 org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
                 if(auth != null && auth.getName() != null) {
                     Optional<Users> user = usersRepository.findByUsername(auth.getName());
@@ -59,6 +57,10 @@ public class TradesController {
                     }
                 }
             } catch (Exception e) {}
+        }
+
+        if ("all".equalsIgnoreCase(role)) {
+            return tradesRepository.findAll();
         }
 
         if (userId != null) {
@@ -77,7 +79,6 @@ public class TradesController {
         return tradesRepository.findAll();
     }
 
-    // Get trade by ID
     @GetMapping("/{id}")
     public ResponseEntity<Trades> getById(@PathVariable UUID id) {
         return tradesRepository.findById(id)
@@ -85,7 +86,6 @@ public class TradesController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Create Trade (Stage 1: PENDING)
     @PostMapping("/")
     public ResponseEntity<?> create(@RequestBody Trades request,
                                     @RequestHeader(value = "Authorization", required = false) String authHeader) {
@@ -94,21 +94,6 @@ public class TradesController {
         }
 
         String buyerId = request.getBuyerId();
-        if (buyerId == null && authHeader != null && authHeader.startsWith("Bearer ")) {
-            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-            if(auth != null && auth.getName() != null) {
-                for(Users u : usersRepository.findAll()) {
-                    if(u.getUsername().equals(auth.getName())) {
-                        buyerId = u.getId().toString();
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (buyerId == null) {
-            return ResponseEntity.badRequest().body("buyerId is required (either in request body or as Bearer token in Authorization header)");
-        }
 
         Trades trade = Trades.builder()
                 .title(request.getTitle())
@@ -118,16 +103,60 @@ public class TradesController {
                 .sellerId(request.getSellerId())
                 .status(TradeStatus.PENDING)
                 .createdAt(LocalDateTime.now())
+                .tradeCode(generateTradeCode())
                 .build();
 
         Trades saved = tradesRepository.save(trade);
-        
+
         sendNotification(request.getSellerId(), "NEW_TRADE", "A new trade has been initiated with you.");
-        
+
         return ResponseEntity.status(201).body(saved);
     }
 
-    // Buyer Deposits Funds (Stage 2: FUNDED)
+    @PostMapping("/{id}/join")
+    public ResponseEntity<?> joinTrade(@PathVariable UUID id) {
+        Optional<Trades> optionalTrade = tradesRepository.findById(id);
+        if (optionalTrade.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return joinTradeInternal(optionalTrade.get());
+    }
+
+    @PostMapping("/join/{code}")
+    public ResponseEntity<?> joinTradeByCode(@PathVariable String code) {
+        Optional<Trades> optionalTrade = tradesRepository.findByTradeCode(code);
+        if (optionalTrade.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return joinTradeInternal(optionalTrade.get());
+    }
+
+    private ResponseEntity<?> joinTradeInternal(Trades trade) {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            return ResponseEntity.status(401).body("Not authenticated");
+        }
+
+        Optional<Users> buyerOpt = usersRepository.findByUsername(auth.getName());
+        if (buyerOpt.isEmpty()) {
+            return ResponseEntity.status(401).body("User not found");
+        }
+
+        String buyerId = buyerOpt.get().getId().toString();
+
+        if (buyerId.equals(trade.getSellerId())) {
+            return ResponseEntity.badRequest().body("You cannot join your own trade as the buyer");
+        }
+
+        trade.setBuyerId(buyerId);
+        Trades saved = tradesRepository.save(trade);
+
+        sendNotification(trade.getSellerId(), "TRADE_JOINED", "A buyer has joined your trade.");
+
+        return ResponseEntity.ok(saved);
+    }
+
     @PostMapping("/{id}/deposit")
     public ResponseEntity<?> deposit(@PathVariable UUID id) {
         Optional<Trades> optionalTrade = tradesRepository.findById(id);
@@ -140,8 +169,7 @@ public class TradesController {
             return ResponseEntity.badRequest().body("Trade is not in CREATED or PENDING status");
         }
 
-        // Call Escrow Service to hold funds
-        String buyerEmail = "buyer@campus.edu"; // default fallback
+        String buyerEmail = "buyer@campus.edu";
         try {
             Optional<Users> buyerOpt = usersRepository.findById(java.util.Objects.requireNonNull(UUID.fromString(trade.getBuyerId())));
             if (buyerOpt.isPresent()) {
@@ -156,15 +184,32 @@ public class TradesController {
             return ResponseEntity.internalServerError().body("Escrow deposit failed or Escrow service is down");
         }
 
+        return ResponseEntity.ok(escrowResponse);
+    }
+
+    @PostMapping("/{id}/verify-payment")
+    public ResponseEntity<?> verifyPayment(@PathVariable UUID id) {
+        Optional<Trades> optionalTrade = tradesRepository.findById(id);
+        if (optionalTrade.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Trades trade = optionalTrade.get();
+        String reference = "trade_" + trade.getId();
+
+        boolean verified = escrowService.verifyPayment(reference);
+        if (!verified) {
+            return ResponseEntity.badRequest().body("Payment could not be verified. Please try again.");
+        }
+
         trade.setStatus(TradeStatus.FUNDED);
         Trades saved = tradesRepository.save(trade);
-        
+
         sendNotification(trade.getSellerId(), "TRADE_FUNDED", "Funds have been deposited. Please prepare item for dispatch.");
-        
+
         return ResponseEntity.ok(saved);
     }
 
-    // Seller Uploads Live Photo & Generates Dispatch Code (Stage 3: DISPATCH_PENDING)
     @PostMapping("/{id}/seller-upload")
     public ResponseEntity<?> sellerUpload(@PathVariable UUID id, @RequestBody SellerUploadRequest request) {
         Optional<Trades> optionalTrade = tradesRepository.findById(id);
@@ -186,13 +231,12 @@ public class TradesController {
         trade.setStatus(TradeStatus.DISPATCH_PENDING);
 
         Trades saved = tradesRepository.save(trade);
-        
+
         sendNotification(trade.getBuyerId(), "DISPATCH_PENDING", "Seller has verified item photo and is awaiting dispatch.");
-        
+
         return ResponseEntity.ok(saved);
     }
 
-    // Rider Inspects & Accepts Item using Dispatch Code (Stage 4: IN_TRANSIT)
     @PostMapping("/{id}/rider-pickup")
     public ResponseEntity<?> riderPickup(@PathVariable UUID id, @RequestBody RiderPickupRequest request) {
         Optional<Trades> optionalTrade = tradesRepository.findById(id);
@@ -219,14 +263,13 @@ public class TradesController {
         trade.setStatus(TradeStatus.IN_TRANSIT);
 
         Trades saved = tradesRepository.save(trade);
-        
+
         sendNotification(trade.getBuyerId(), "IN_TRANSIT", "Rider has picked up the item and it is in transit.");
         sendNotification(trade.getSellerId(), "IN_TRANSIT", "Rider has successfully picked up your item.");
-        
+
         return ResponseEntity.ok(saved);
     }
 
-    // Rider Drops off at central SafeTrade Post (Stage 5: AT_POST)
     @PostMapping("/{id}/post-dropoff")
     public ResponseEntity<?> postDropoff(@PathVariable UUID id, @RequestBody PostDropoffRequest request) {
         Optional<Trades> optionalTrade = tradesRepository.findById(id);
@@ -248,14 +291,13 @@ public class TradesController {
         trade.setStatus(TradeStatus.AT_POST);
 
         Trades saved = tradesRepository.save(trade);
-        
+
         sendNotification(trade.getBuyerId(), "AT_POST", "Your item has arrived at the SafeTrade post. Please collect it using your release code.");
         sendNotification(trade.getSellerId(), "AT_POST", "Item has successfully reached the SafeTrade post.");
-        
+
         return ResponseEntity.ok(saved);
     }
 
-    // Buyer Collects from Operator using Release Code (Stage 6: RELEASED)
     @PostMapping("/{id}/buyer-collect")
     public ResponseEntity<?> buyerCollect(@PathVariable UUID id, @RequestBody BuyerCollectRequest request) {
         Optional<Trades> optionalTrade = tradesRepository.findById(id);
@@ -272,7 +314,6 @@ public class TradesController {
             return ResponseEntity.badRequest().body("Invalid buyer release code");
         }
 
-        // Call Escrow Service to release funds to the seller
         String recipientCode = "RCP_dummy_seller";
         String escrowResponse = escrowService.releaseFunds(trade.getId(), recipientCode, trade.getPrice());
         if (escrowResponse == null) {
@@ -284,13 +325,19 @@ public class TradesController {
         return ResponseEntity.ok(saved);
     }
 
-    // Helper: generates standard secure code
     private String generateCode() {
         int num = (int) (Math.random() * 900000) + 100000;
         return "ST-" + num;
     }
 
-    // Data Transfer Objects
+    private String generateTradeCode() {
+        String code;
+        do {
+            code = String.valueOf((int) (Math.random() * 90000) + 10000);
+        } while (tradesRepository.findByTradeCode(code).isPresent());
+        return code;
+    }
+
     @Data
     public static class SellerUploadRequest {
         private String itemPhotoBase64;

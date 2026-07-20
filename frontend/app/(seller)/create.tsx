@@ -5,21 +5,26 @@ import {
     ScrollView,
     KeyboardAvoidingView,
     Platform,
+    TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/hooks/useAuth";
 import { useTrades } from "@/hooks/useTrades";
 import { createTrade } from "@/services/tradeService";
+import { Alert } from "react-native";
 
 export default function CreateTrade() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { colors, spacing } = useTheme();
+    const { user } = useAuth();
     const { refetch } = useTrades();
 
     const [title, setTitle] = useState("");
@@ -39,16 +44,26 @@ export default function CreateTrade() {
         setErrors(nextErrors);
         if (Object.keys(nextErrors).length > 0) return;
 
+        if (!user?.id) {
+            Alert.alert("Not logged in", "Please log in again to create a trade.");
+            return;
+        }
+
         try {
             setIsSubmitting(true);
             const result = await createTrade({
                 title: title.trim(),
                 description: description.trim() || undefined,
                 price: parsedPrice,
-                sellerId: "seller-001",
+                sellerId: user.id,
             });
             await refetch();
             setTradeCode(result.tradeCode);
+        } catch (err: any) {
+            Alert.alert(
+                "Could not create trade",
+                err?.response?.data?.message ?? err?.message ?? "Please try again."
+            );
         } finally {
             setIsSubmitting(false);
         }
@@ -131,7 +146,11 @@ export default function CreateTrade() {
                             Share this trade code with your buyer. They can enter it
                             in their Accept Trade tab to join the trade.
                         </Text>
-                        <View
+                        <TouchableOpacity
+                            onPress={async () => {
+                                await Clipboard.setStringAsync(tradeCode ?? "");
+                                Alert.alert("Copied", "Trade code copied to clipboard.");
+                            }}
                             style={{
                                 backgroundColor: colors.cardAlt,
                                 borderRadius: 12,
@@ -147,11 +166,22 @@ export default function CreateTrade() {
                                     fontSize: 24,
                                     fontWeight: "800",
                                     letterSpacing: 6,
+                                    textAlign: "center",
                                 }}
                             >
                                 {tradeCode}
                             </Text>
-                        </View>
+                            <Text
+                                style={{
+                                    color: colors.muted,
+                                    fontSize: 11,
+                                    textAlign: "center",
+                                    marginTop: 4,
+                                }}
+                            >
+                                Tap to copy
+                            </Text>
+                        </TouchableOpacity>
                         <View
                             style={{
                                 flexDirection: "row",

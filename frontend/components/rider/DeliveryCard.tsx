@@ -2,7 +2,7 @@ import { View, Text } from "react-native";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
-import { colors, spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { RiderJob } from "@/types/rider";
 import { useState } from "react";
 
@@ -12,6 +12,7 @@ interface DeliveryCardProps {
 }
 
 const DeliveryCard = ({ job, onConfirm }: DeliveryCardProps) => {
+    const { colors, spacing } = useTheme();
     return (
         <Card style={{ marginBottom: spacing[3] }}>
             <View

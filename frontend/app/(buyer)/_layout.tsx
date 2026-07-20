@@ -3,6 +3,7 @@ import PortalTabs from "@/components/navigation/PortalTabs";
 export default function BuyerLayout() {
     return (
         <PortalTabs
+            role="buyer"
             tabs={[
                 { name: "home", title: "Home", icon: "home" },
                 { name: "accept", title: "Accept Trade", icon: "download" },

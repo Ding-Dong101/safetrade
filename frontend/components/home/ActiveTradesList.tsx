@@ -1,5 +1,5 @@
 import { View, Text, FlatList } from "react-native";
-import { colors, spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import TradeCard from "@/components/trade/TradeCard";
 import EmptyState from "@/components/shared/EmptyState";
 import { Trade } from "@/types/trade";
@@ -15,6 +15,7 @@ const ActiveTradesList = ({
     onTradePress,
     onCreatePress,
 }: ActiveTradesListProps) => {
+    const { colors, spacing } = useTheme();
     return (
         <View style={{ flex: 1 }}>
             <View
