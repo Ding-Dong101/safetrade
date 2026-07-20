@@ -11,6 +11,8 @@ import EmptyState from "@/components/shared/EmptyState";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { MOCK_USER } from "@/constants/data";
 import { Trade } from "@/types/trade";
+import { useEffect } from "react";
+import { useRole } from "@/hooks/useRole";
 
 interface PortalHomeProps {
     role: "buyer" | "seller";
@@ -21,7 +23,13 @@ const PortalHome = ({ role }: PortalHomeProps) => {
     const insets = useSafeAreaInsets();
     const { user } = useAuth();
     const { trades, isLoading } = useTrades();
+    const { switchRole } = useRole();
     const { colors, spacing } = useTheme();
+
+    useEffect(() => {
+    switchRole(role);
+}, [role]);
+   
 
     const handleTradePress = (trade: Trade) => {
         router.push(`/trade/${trade.id}` as any);
@@ -30,6 +38,20 @@ const PortalHome = ({ role }: PortalHomeProps) => {
     const handleTopUp = () => {
         Alert.alert("Top Up", "Wallet top up is coming soon.");
     };
+
+    const ACTIVE_STATUSES = [
+        "CREATED",
+        "PENDING",
+        "FUNDED",
+        "DISPATCH_PENDING",
+        "IN_TRANSIT",
+        "AT_POST",
+    ];
+    const activeTrades = trades.filter((t) => ACTIVE_STATUSES.includes(t.status));
+    const escrowBalance = activeTrades
+        .filter((t) => t.status !== "CREATED" && t.status !== "PENDING")
+        .reduce((sum, t) => sum + (t.price ?? 0), 0);
+    const availableBalance = user?.balance ?? 0;
 
     if (isLoading) {
         return <LoadingSpinner message="Loading trades..." />;
@@ -57,10 +79,10 @@ const PortalHome = ({ role }: PortalHomeProps) => {
             </View>
 
             <BalanceCard
-                available={MOCK_USER.availableBalance}
-                total={MOCK_USER.totalBalance}
-                escrow={MOCK_USER.escrowBalance}
-                activeDeals={MOCK_USER.activeDeals}
+                available={availableBalance}
+                total={availableBalance + escrowBalance}
+                escrow={escrowBalance}
+                activeDeals={activeTrades.length}
                 onTopUp={role === "buyer" ? handleTopUp : undefined}
             />
 

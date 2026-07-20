@@ -1,7 +1,8 @@
 import { useAuthStore } from "@/store/authStore";
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000/api";
-
+const BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? "http://10.133.136.190:8080/api";
+ 
 const request = async <T = any>(
     method: string,
     path: string,
@@ -21,6 +22,11 @@ const request = async <T = any>(
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
+        // Stored token expired or was rejected — drop the session so the app
+        // redirects to login instead of failing on every request.
+        if (response.status === 401 && token && !path.includes("/login")) {
+            useAuthStore.getState().clearUser();
+        }
         const error: any = new Error(data?.message ?? `Request failed (${response.status})`);
         error.response = { status: response.status, data };
         throw error;

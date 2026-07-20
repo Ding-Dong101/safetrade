@@ -1,5 +1,5 @@
 import { View, Text, Image, ImageSourcePropType, ImageStyle, ViewStyle } from "react-native";
-import { colors } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 
 interface AvatarProps {
     name?: string;
@@ -15,6 +15,7 @@ const getInitials = (name: string): string => {
 };
 
 const Avatar = ({ name, source, size = 44, style }: AvatarProps) => {
+    const { colors } = useTheme();
     if (source) {
         return (
             <Image

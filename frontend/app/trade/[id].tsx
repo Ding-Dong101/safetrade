@@ -1,9 +1,14 @@
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing } from "@/constants/theme";
+import * as ImagePicker from "expo-image-picker";
+import { useTheme } from "@/hooks/useTheme";
 import { useTrades } from "@/hooks/useTrades";
-import { useEffect } from "react";
+import { useRole } from "@/hooks/useRole";
+import { depositFunds, verifyPayment, sellerUpload } from "@/services/tradeService";
+import * as Linking from "expo-linking";
+import Button from "@/components/ui/Button";
+import { useEffect, useState } from "react";
 import ScreenHeader from "@/components/shared/ScreenHeader";
 import TradeStatusBadge from "@/components/trade/TradeStatusBadge";
 import TradeStatusBar from "@/components/trade/TradeStatusBar";
@@ -11,15 +16,98 @@ import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { formatDateTime } from "@/utils/formatDate";
 import Card from "@/components/ui/Card";
+import { getUserById } from "@/services/userService";
 
 export default function TradeDetails() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const insets = useSafeAreaInsets();
+    const { colors, spacing } = useTheme();
     const { selectedTrade, isLoading, fetchTradeById } = useTrades();
+    const { activeRole } = useRole();
+    const [isActing, setIsActing] = useState(false);
+    const [buyerName, setBuyerName] = useState<string>("");
+    const [sellerName, setSellerName] = useState<string>("");
 
     useEffect(() => {
         if (id) fetchTradeById(id);
     }, [id]);
+
+
+
+   useEffect(() => {
+    if (!selectedTrade) return;
+    if (selectedTrade.buyerId) {
+        getUserById(selectedTrade.buyerId).then((u) => setBuyerName(u?.username ?? selectedTrade.buyerId));
+    }
+    if (selectedTrade.sellerId) {
+        getUserById(selectedTrade.sellerId).then((u) => setSellerName(u?.username ?? selectedTrade.sellerId));
+    }
+}, [selectedTrade?.buyerId, selectedTrade?.sellerId]);
+
+    
+
+    const handleDeposit = async () => {
+    if (!selectedTrade) return;
+    try {
+        setIsActing(true);
+        const { authorizationUrl } = await depositFunds(selectedTrade.id);
+        if (authorizationUrl) {
+            await Linking.openURL(authorizationUrl);
+            Alert.alert(
+                "Complete Payment",
+                "Complete payment in your browser, then return here and tap 'Confirm Payment'."
+            );
+        } else {
+            Alert.alert("Deposit Failed", "No payment link was returned. Please try again.");
+        }
+    } catch (err: any) {
+        Alert.alert("Deposit Failed", err?.response?.data ?? err?.message ?? "Please try again.");
+    } finally {
+        setIsActing(false);
+    }
+};
+
+const handleVerifyPayment = async () => {
+    if (!selectedTrade) return;
+    try {
+        setIsActing(true);
+        await verifyPayment(selectedTrade.id);
+        Alert.alert("Escrow Funded", "Payment verified. The seller has been notified.");
+        await fetchTradeById(selectedTrade.id);
+    } catch (err: any) {
+        Alert.alert("Verification Failed", err?.response?.data ?? err?.message ?? "Please try again.");
+    } finally {
+        setIsActing(false);
+    }
+};
+
+    const handleSellerUpload = async () => {
+        if (!selectedTrade) return;
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        const result = permission.granted
+            ? await ImagePicker.launchCameraAsync({ base64: true, quality: 0.3 })
+            : await ImagePicker.launchImageLibraryAsync({
+                  mediaTypes: ["images"],
+                  base64: true,
+                  quality: 0.3,
+              });
+        const photo = result.canceled ? null : result.assets[0]?.base64;
+        if (!photo) return;
+
+        try {
+            setIsActing(true);
+            const updated = await sellerUpload(selectedTrade.id, photo);
+            Alert.alert(
+                "Item Verified",
+                `Your dispatch code is ${updated.dispatchCode}. Share it with the rider at pickup.`
+            );
+            await fetchTradeById(selectedTrade.id);
+        } catch (err: any) {
+            Alert.alert("Upload Failed", err?.response?.data ?? err?.message ?? "Please try again.");
+        } finally {
+            setIsActing(false);
+        }
+    };
 
     if (isLoading) return <LoadingSpinner message="Loading trade..." />;
 
@@ -100,21 +188,21 @@ export default function TradeDetails() {
                 <Card style={{ gap: spacing[3] }}>
                     {[
                         {
-                            label: "Buyer",
-                            value: selectedTrade.buyerId || "—",
-                        },
-                        {
-                            label: "Seller",
-                            value: selectedTrade.sellerId || "—",
-                        },
-                        {
-                            label: "Created",
-                            value: formatDateTime(selectedTrade.createdAt),
-                        },
-                        {
-                            label: "Trade ID",
-                            value: selectedTrade.id,
-                        },
+    label: "Buyer",
+    value: buyerName || "—",
+},
+{
+    label: "Seller",
+    value: sellerName || "—",
+},
+{
+    label: "Created",
+    value: formatDateTime(selectedTrade.createdAt),
+},
+{
+    label: "Trade Code",
+    value: (selectedTrade as any).tradeCode ?? selectedTrade.id,
+},
                     ].map((item) => (
                         <View
                             key={item.label}
@@ -146,6 +234,58 @@ export default function TradeDetails() {
                         </View>
                     ))}
                 </Card>
+
+                {/* Next action for the current role */}
+                {activeRole === "buyer" &&
+    (selectedTrade.status === "CREATED" ||
+        selectedTrade.status === "PENDING") && (
+        <>
+            <Button
+                label="Deposit Funds into Escrow"
+                onPress={handleDeposit}
+                isLoading={isActing}
+            />
+            <Button
+                label="Confirm Payment"
+                onPress={handleVerifyPayment}
+                isLoading={isActing}
+                variant="outlined"
+            />
+        </>
+    )}
+                {activeRole === "seller" && selectedTrade.status === "FUNDED" && (
+                    <Button
+                        label="Take Item Photo to Get Dispatch Code"
+                        onPress={handleSellerUpload}
+                        isLoading={isActing}
+                    />
+                )}
+
+                {activeRole === "seller" &&
+                    selectedTrade.status === "DISPATCH_PENDING" &&
+                    selectedTrade.dispatchCode && (
+                        <Card>
+                            <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
+                                Dispatch Code (share with the rider)
+                            </Text>
+                            <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "800" }}>
+                                {selectedTrade.dispatchCode}
+                            </Text>
+                        </Card>
+                    )}
+
+                {activeRole === "buyer" &&
+                    selectedTrade.status === "AT_POST" &&
+                    selectedTrade.releaseCode && (
+                        <Card>
+                            <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
+                                Pick-Up Code (show at the SafeTrade post)
+                            </Text>
+                            <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "800" }}>
+                                {selectedTrade.releaseCode}
+                            </Text>
+                        </Card>
+                    )}
 
                 {/* Description */}
                 {selectedTrade.description && (

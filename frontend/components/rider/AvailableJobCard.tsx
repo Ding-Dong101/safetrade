@@ -1,7 +1,7 @@
 import { View, Text } from "react-native";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
-import { colors, spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { AvailableJob } from "@/types/rider";
 
 interface AvailableJobCardProps {
@@ -11,6 +11,7 @@ interface AvailableJobCardProps {
 }
 
 const AvailableJobCard = ({ job, onAccept, onIgnore }: AvailableJobCardProps) => {
+    const { colors, spacing } = useTheme();
     return (
         <Card style={{ marginBottom: spacing[3] }}>
             <Text

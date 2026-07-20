@@ -1,19 +1,21 @@
 import { View, Text } from "react-native";
-import { colors } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { Role } from "@/types/auth";
 
 interface PortalBadgeProps {
     role: Role;
 }
 
-const roleConfig: Record<Role, { label: string; color: string }> = {
-    buyer: { label: "Buyer Portal", color: colors.info },
-    seller: { label: "Seller Portal", color: colors.purple },
-    rider: { label: "Rider Portal", color: colors.primary },
-    post: { label: "Post Portal", color: colors.accent },
-};
-
 const PortalBadge = ({ role }: PortalBadgeProps) => {
+    const { colors } = useTheme();
+
+    const roleConfig: Record<Role, { label: string; color: string }> = {
+        buyer: { label: "Buyer Portal", color: colors.info },
+        seller: { label: "Seller Portal", color: colors.purple },
+        rider: { label: "Rider Portal", color: colors.primary },
+        post: { label: "Post Portal", color: colors.accent },
+    };
+
     const { label, color } = roleConfig[role];
 
     return (
@@ -28,7 +30,7 @@ const PortalBadge = ({ role }: PortalBadgeProps) => {
         >
             <Text
                 style={{
-                    color: colors.foreground,
+                    color: "#ffffff",
                     fontSize: 11,
                     fontWeight: "700",
                 }}

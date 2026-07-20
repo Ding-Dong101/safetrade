@@ -3,7 +3,9 @@ import { View, Text, ScrollView, Switch, TouchableOpacity, Alert } from "react-n
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import Card from "@/components/ui/Card";
+import Avatar from "@/components/ui/Avatar";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -50,8 +52,33 @@ const SettingsScreen = () => {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { colors, spacing, isDark, toggleTheme } = useTheme();
-    const { logout } = useAuth();
+    const { user, token, logout, setUser } = useAuth();
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+    const fullName =
+        [user?.firstName, user?.lastName].filter(Boolean).join(" ") || user?.username;
+
+    const handlePickAvatar = async () => {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+            Alert.alert(
+                "Permission needed",
+                "Allow photo library access to set a profile picture."
+            );
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ["images"],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.7,
+        });
+
+        if (!result.canceled && result.assets[0]?.uri && user && token) {
+            setUser({ ...user, avatar: result.assets[0].uri }, token);
+        }
+    };
 
     const handleLogout = () => {
         Alert.alert("Log Out", "Are you sure you want to log out?", [
@@ -87,6 +114,73 @@ const SettingsScreen = () => {
             >
                 Settings
             </Text>
+
+            <Card>
+                <View
+                    style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: spacing[4],
+                    }}
+                >
+                    <TouchableOpacity onPress={handlePickAvatar} activeOpacity={0.8}>
+                        <Avatar
+                            name={fullName}
+                            source={user?.avatar ? { uri: user.avatar } : undefined}
+                            size={72}
+                        />
+                        <View
+                            style={{
+                                position: "absolute",
+                                bottom: -2,
+                                right: -2,
+                                backgroundColor: colors.primary,
+                                width: 26,
+                                height: 26,
+                                borderRadius: 13,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                borderWidth: 2,
+                                borderColor: colors.card,
+                            }}
+                        >
+                            <Ionicons name="camera" size={14} color={colors.background} />
+                        </View>
+                    </TouchableOpacity>
+
+                    <View style={{ flex: 1 }}>
+                        <Text
+                            style={{
+                                color: colors.foreground,
+                                fontSize: 17,
+                                fontWeight: "700",
+                            }}
+                            numberOfLines={1}
+                        >
+                            {fullName ?? "Guest"}
+                        </Text>
+                        {user?.email ? (
+                            <Text
+                                style={{ color: colors.muted, fontSize: 13, marginTop: 2 }}
+                                numberOfLines={1}
+                            >
+                                {user.email}
+                            </Text>
+                        ) : null}
+                        <Text
+                            style={{
+                                color: colors.primary,
+                                fontSize: 12,
+                                fontWeight: "600",
+                                marginTop: 4,
+                            }}
+                            onPress={handlePickAvatar}
+                        >
+                            Change profile photo
+                        </Text>
+                    </View>
+                </View>
+            </Card>
 
             <Card style={{ paddingVertical: 0 }}>
                 <SettingRow

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     View,
     Text,
@@ -7,6 +7,7 @@ import {
     Platform,
     Alert,
     TextInput,
+    RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,35 +16,37 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import PortalSwitcher from "@/components/home/PortalSwitcher";
 import EmptyState from "@/components/shared/EmptyState";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { useTheme } from "@/hooks/useTheme";
-import { MOCK_PARCELS, PostParcel } from "@/constants/data";
+import { getAllTrades, postDropoff, buyerCollect } from "@/services/tradeService";
+import { Trade } from "@/types/trade";
 
 interface ParcelCardProps {
-    parcel: PostParcel;
-    onVerified: (parcelId: string) => void;
+    trade: Trade;
+    onVerify: (trade: Trade, code: string) => Promise<void>;
 }
 
-const ParcelCard = ({ parcel, onVerified }: ParcelCardProps) => {
+const ParcelCard = ({ trade, onVerify }: ParcelCardProps) => {
     const { colors, spacing } = useTheme();
     const [code, setCode] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const isDropOff = parcel.status === "pending_drop_off";
+    const isDropOff = trade.status === "IN_TRANSIT";
     const accent = isDropOff ? colors.accent : colors.primary;
     const codeLabel = isDropOff ? "Drop-Off Code" : "Pick-Up Code";
     const statusLabel = isDropOff ? "Pending Drop-Off" : "Awaiting Buyer Collection";
 
-    const handleVerify = () => {
+    const handleVerify = async () => {
         if (code.trim().length < 4) {
             Alert.alert("Invalid Code", `Enter the ${codeLabel.toLowerCase()} to verify.`);
             return;
         }
-        Alert.alert(
-            "Code Verified",
-            isDropOff
-                ? `"${parcel.itemName}" has been received at the post.`
-                : `"${parcel.itemName}" has been released to the buyer.`,
-            [{ text: "OK", onPress: () => onVerified(parcel.id) }]
-        );
+        try {
+            setIsSubmitting(true);
+            await onVerify(trade, code.trim());
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -64,10 +67,10 @@ const ParcelCard = ({ parcel, onVerified }: ParcelCardProps) => {
                             marginBottom: 4,
                         }}
                     >
-                        {parcel.itemName}
+                        {trade.title ?? "Parcel"}
                     </Text>
-                    <Text style={{ color: colors.muted, fontSize: 12 }}>
-                        ID: {parcel.tradeId}
+                    <Text style={{ color: colors.muted, fontSize: 12 }} numberOfLines={1}>
+                        ID: {trade.id}
                     </Text>
                 </View>
 
@@ -109,6 +112,7 @@ const ParcelCard = ({ parcel, onVerified }: ParcelCardProps) => {
                 <Button
                     label="Verify Code"
                     onPress={handleVerify}
+                    isLoading={isSubmitting}
                     variant={isDropOff ? "warning" : "primary"}
                     style={{
                         marginTop: spacing[3],
@@ -125,22 +129,73 @@ export default function PostHome() {
     const insets = useSafeAreaInsets();
     const { colors, spacing } = useTheme();
 
-    const [parcels, setParcels] = useState<PostParcel[]>(MOCK_PARCELS);
+    const [parcels, setParcels] = useState<Trade[]>([]);
     const [search, setSearch] = useState("");
+    const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const loadParcels = useCallback(async () => {
+        try {
+            const trades = await getAllTrades();
+            setParcels(
+                trades.filter(
+                    (trade) =>
+                        trade.status === "IN_TRANSIT" || trade.status === "AT_POST"
+                )
+            );
+        } catch (err: any) {
+            Alert.alert(
+                "Could not load parcels",
+                err?.message ?? "Check your connection and try again."
+            );
+        } finally {
+            setIsLoading(false);
+            setIsRefreshing(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadParcels();
+    }, [loadParcels]);
 
     const filteredParcels = useMemo(() => {
         const query = search.trim().toUpperCase();
         if (!query) return parcels;
         return parcels.filter(
-            (parcel) =>
-                parcel.tradeId.toUpperCase().includes(query) ||
-                parcel.itemName.toUpperCase().includes(query)
+            (trade) =>
+                trade.id.toUpperCase().includes(query) ||
+                (trade.title ?? "").toUpperCase().includes(query)
         );
     }, [parcels, search]);
 
-    const handleVerified = (parcelId: string) => {
-        setParcels((items) => items.filter((item) => item.id !== parcelId));
+    const handleVerify = async (trade: Trade, code: string) => {
+        const isDropOff = trade.status === "IN_TRANSIT";
+        try {
+            if (isDropOff) {
+                await postDropoff(trade.id, code);
+                Alert.alert(
+                    "Code Verified",
+                    `"${trade.title ?? "Parcel"}" has been received at the post.`
+                );
+            } else {
+                await buyerCollect(trade.id, code);
+                Alert.alert(
+                    "Code Verified",
+                    `"${trade.title ?? "Parcel"}" has been released to the buyer and funds sent to the seller.`
+                );
+            }
+            await loadParcels();
+        } catch (err: any) {
+            Alert.alert(
+                "Verification Failed",
+                err?.response?.data ??
+                    err?.message ??
+                    "The code did not match. Please try again."
+            );
+        }
     };
+
+    if (isLoading) return <LoadingSpinner message="Loading parcels..." />;
 
     return (
         <KeyboardAvoidingView
@@ -154,6 +209,16 @@ export default function PostHome() {
                 }}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefreshing}
+                        onRefresh={() => {
+                            setIsRefreshing(true);
+                            loadParcels();
+                        }}
+                        tintColor={colors.primary}
+                    />
+                }
             >
                 <View
                     style={{
@@ -216,11 +281,11 @@ export default function PostHome() {
                             }
                         />
                     ) : (
-                        filteredParcels.map((parcel) => (
+                        filteredParcels.map((trade) => (
                             <ParcelCard
-                                key={parcel.id}
-                                parcel={parcel}
-                                onVerified={handleVerified}
+                                key={trade.id}
+                                trade={trade}
+                                onVerify={handleVerify}
                             />
                         ))
                     )}
