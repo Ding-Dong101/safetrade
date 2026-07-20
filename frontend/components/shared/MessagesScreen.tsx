@@ -7,11 +7,21 @@ import { useTheme } from "@/hooks/useTheme";
 import { useTrades } from "@/hooks/useTrades";
 import { useAuth } from "@/hooks/useAuth";
 import { Trade } from "@/types/trade";
+import { useEffect, useState } from "react";
+import { getUserById } from "@/services/userService";
 
-const TradeChatRow = ({ trade, currentUsername }: { trade: Trade; currentUsername?: string }) => {
+const TradeChatRow = ({ trade, currentUserId }: { trade: Trade; currentUserId?: string }) => {
     const { colors, spacing } = useTheme();
-    const counterparty =
-        trade.buyerId === currentUsername ? trade.sellerId : trade.buyerId;
+    const [counterpartyName, setCounterpartyName] = useState<string>("...");
+
+    useEffect(() => {
+        const counterpartyId =
+            trade.buyerId === currentUserId ? trade.sellerId : trade.buyerId;
+        if (!counterpartyId) return;
+        getUserById(counterpartyId).then((u) =>
+            setCounterpartyName(u?.username ?? counterpartyId)
+        );
+    }, [trade.buyerId, trade.sellerId, currentUserId]);
 
     return (
         <Card style={{ marginBottom: spacing[3] }}>
@@ -34,7 +44,7 @@ const TradeChatRow = ({ trade, currentUsername }: { trade: Trade; currentUsernam
                             fontWeight: "600",
                         }}
                     >
-                        {counterparty}
+                        {counterpartyName}
                     </Text>
                     <Text style={{ color: colors.muted, fontSize: 12 }}>
                         {trade.title}
@@ -63,7 +73,7 @@ const MessagesScreen = () => {
             data={trades}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-                <TradeChatRow trade={item} currentUsername={user?.username} />
+                <TradeChatRow trade={item} currentUserId={user?.id} />
             )}
             ListHeaderComponent={
                 <Text
