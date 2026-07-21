@@ -25,6 +25,9 @@ public class Trades {
    @Column(unique = true)
    private String tradeCode;
 
+   @Column(unique = true)
+   private String riderCode;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 

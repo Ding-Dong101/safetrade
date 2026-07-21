@@ -104,6 +104,7 @@ public class TradesController {
                 .status(TradeStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .tradeCode(generateTradeCode())
+                .riderCode(generateRiderCode())
                 .build();
 
         Trades saved = tradesRepository.save(trade);
@@ -325,6 +326,66 @@ public class TradesController {
         return ResponseEntity.ok(saved);
     }
 
+    @GetMapping("/rider-code/{code}")
+    public ResponseEntity<?> getTradeByRiderCode(@PathVariable String code) {
+        Optional<Trades> optionalTrade = tradesRepository.findByRiderCode(code);
+        if (optionalTrade.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(optionalTrade.get());
+    }
+
+    @PostMapping("/{id}/rider-accept")
+    public ResponseEntity<?> riderAccept(@PathVariable UUID id, @RequestBody RiderAcceptRequest request) {
+        Optional<Trades> optionalTrade = tradesRepository.findById(id);
+        if (optionalTrade.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Trades trade = optionalTrade.get();
+        if (request.getRiderId() == null || request.getRiderId().isEmpty()) {
+            return ResponseEntity.badRequest().body("Rider ID is required");
+        }
+        trade.setRiderId(request.getRiderId());
+        trade.setRiderPickedUpAt(LocalDateTime.now());
+        trade.setStatus(TradeStatus.IN_TRANSIT);
+        Trades saved = tradesRepository.save(trade);
+
+        sendNotification(trade.getBuyerId(), "IN_TRANSIT", "Rider has accepted the delivery and it is in transit.");
+        sendNotification(trade.getSellerId(), "IN_TRANSIT", "Rider has accepted your item for delivery.");
+
+        return ResponseEntity.ok(saved);
+    }
+
+    @PostMapping("/{id}/rider-confirm")
+    public ResponseEntity<?> riderConfirm(@PathVariable UUID id, @RequestBody RiderConfirmRequest request) {
+        Optional<Trades> optionalTrade = tradesRepository.findById(id);
+        if (optionalTrade.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Trades trade = optionalTrade.get();
+        if (trade.getStatus() != TradeStatus.IN_TRANSIT) {
+            return ResponseEntity.badRequest().body("Trade is not in transit");
+        }
+        if (request.getTradeId() == null || !request.getTradeId().equalsIgnoreCase(trade.getId().toString())) {
+            return ResponseEntity.badRequest().body("Invalid Trade ID confirmation");
+        }
+
+        // Trigger automatic escrow release to seller
+        String recipientCode = "RCP_dummy_seller";
+        String escrowResponse = escrowService.releaseFunds(trade.getId(), recipientCode, trade.getPrice());
+        if (escrowResponse == null) {
+            return ResponseEntity.internalServerError().body("Escrow release failed or Escrow service is down");
+        }
+
+        trade.setStatus(TradeStatus.RELEASED);
+        Trades saved = tradesRepository.save(trade);
+
+        sendNotification(trade.getBuyerId(), "RELEASED", "Rider has confirmed direct delivery and funds are released.");
+        sendNotification(trade.getSellerId(), "RELEASED", "Delivery confirmed by rider. Funds have been released to your account.");
+
+        return ResponseEntity.ok(saved);
+    }
+
     private String generateCode() {
         int num = (int) (Math.random() * 900000) + 100000;
         return "ST-" + num;
@@ -335,6 +396,14 @@ public class TradesController {
         do {
             code = String.valueOf((int) (Math.random() * 90000) + 10000);
         } while (tradesRepository.findByTradeCode(code).isPresent());
+        return code;
+    }
+
+    private String generateRiderCode() {
+        String code;
+        do {
+            code = String.valueOf((int) (Math.random() * 90000) + 10000);
+        } while (tradesRepository.findByRiderCode(code).isPresent());
         return code;
     }
 
@@ -357,5 +426,16 @@ public class TradesController {
     @Data
     public static class BuyerCollectRequest {
         private String releaseCode;
+    }
+
+
+    @Data
+    public static class RiderAcceptRequest {
+        private String riderId;
+    }
+
+    @Data
+    public static class RiderConfirmRequest {
+        private String tradeId;
     }
 }

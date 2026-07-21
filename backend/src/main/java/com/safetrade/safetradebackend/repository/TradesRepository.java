@@ -7,4 +7,6 @@ public interface TradesRepository extends JpaRepository<Trades, UUID> {
     java.util.List<Trades> findByBuyerId(String buyerId);
     java.util.List<Trades> findBySellerId(String sellerId);
     Optional<Trades> findByTradeCode(String tradeCode);
+    Optional<Trades> findByRiderCode(String riderCode);
+    
 }
