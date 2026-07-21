@@ -26,6 +26,7 @@ import {
     getAvailableJobs,
     getOngoingJobs,
 } from "@/services/riderService";
+import { useRouter } from "expo-router";
 
 interface OngoingJobCardProps {
     job: RiderJob;
@@ -173,6 +174,7 @@ const AvailableJobRow = ({ job, onAccept, onIgnore }: AvailableJobRowProps) => {
 
 export default function RiderHome() {
     const insets = useSafeAreaInsets();
+    const router = useRouter();
     const { colors, spacing } = useTheme();
     const { user } = useAuth();
 
@@ -269,6 +271,12 @@ export default function RiderHome() {
                     </Text>
                     <PortalSwitcher role="rider" />
                 </View>
+
+                <Button
+    label="Enter Delivery Code"
+    onPress={() => router.push("/(rider)/enter-code")}
+    style={{ marginBottom: spacing[5] }}
+               />
 
                 <Text
                     style={{

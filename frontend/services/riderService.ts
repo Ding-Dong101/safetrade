@@ -2,6 +2,7 @@ import { AvailableJob, JobStatus, RiderJob } from "@/types/rider";
 import { Trade } from "@/types/trade";
 import api from "@/services/api";
 import { useAuthStore } from "@/store/authStore";
+import { getUserById } from "@/services/userService";
 
 // Real rider service backed by the trades API. Rider "jobs" are trades in the
 // dispatch/transit stages; job id === trade id.
@@ -93,4 +94,40 @@ export const updateRiderLocation = async (
 ): Promise<{ latitude: number; longitude: number }> => {
     // No backend endpoint for rider location yet.
     return { latitude, longitude };
+};
+
+
+// Rider previews a trade using the rider code the seller gave them
+export const previewTradeByRiderCode = async (code: string): Promise<Trade> => {
+    const { data } = await api.get<Trade>(`/trades/rider-code/${code.trim()}`);
+    return data;
+};
+
+// Rider accepts the delivery after previewing it
+export const riderAcceptDelivery = async (tradeId: string): Promise<Trade> => {
+    const riderId = useAuthStore.getState().user?.id;
+    if (!riderId) {
+        throw new Error("You must be logged in as a rider");
+    }
+    const { data } = await api.post<Trade>(`/trades/${tradeId}/rider-accept`, {
+        riderId,
+    });
+    return data;
+};
+
+// Rider looks up trade + buyer info before confirming drop-off
+export const getTradeForDropoff = async (
+    tradeId: string
+): Promise<{ trade: Trade; buyerUsername: string }> => {
+    const { data } = await api.get<Trade>(`/trades/${tradeId}`);
+    const buyer = await getUserById(data.buyerId);
+    return { trade: data, buyerUsername: buyer?.username ?? data.buyerId };
+};
+
+// Rider confirms drop-off — this triggers automatic escrow release to the seller
+export const riderConfirmDropoff = async (tradeId: string): Promise<Trade> => {
+    const { data } = await api.post<Trade>(`/trades/${tradeId}/rider-confirm`, {
+        tradeId,
+    });
+    return data;
 };
