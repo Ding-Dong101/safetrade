@@ -26,17 +26,34 @@ public class UsersController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> createUser(@RequestBody Users user) {
+    public ResponseEntity<?> createUser(@RequestBody Users user) {
+        for (Users existing : usersRepository.findAll()) {
+            if (existing.getUsername() != null && existing.getUsername().equalsIgnoreCase(user.getUsername())) {
+                return ResponseEntity.status(400).body(java.util.Map.of("error", "Username already exists"));
+            }
+            if (user.getEmail() != null && !user.getEmail().isEmpty() && existing.getEmail() != null && existing.getEmail().equalsIgnoreCase(user.getEmail())) {
+                return ResponseEntity.status(400).body(java.util.Map.of("error", "Email already exists"));
+            }
+        }
+
         Users newUser = new Users();
         newUser.setUsername(user.getUsername());
         newUser.setFirstname(user.getFirstname());
         newUser.setLastname(user.getLastname());
         newUser.setPassword(user.getPassword());
-        newUser.setEmail(user.getEmail());
+        if (user.getEmail() == null || user.getEmail().isEmpty()) {
+            newUser.setEmail(user.getUsername() + "@phone.local");
+        } else {
+            newUser.setEmail(user.getEmail());
+        }
         newUser.setBalance(0.0);
 
-        Users saved = usersRepository.save(newUser);
-        return ResponseEntity.status(201).body(buildAuthResponse(saved));
+        try {
+            Users saved = usersRepository.save(newUser);
+            return ResponseEntity.status(201).body(buildAuthResponse(saved));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(java.util.Map.of("error", "Registration failed: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/login")
@@ -46,7 +63,7 @@ public class UsersController {
             boolean matchesUsername = user1.getUsername() != null && user1.getUsername().equalsIgnoreCase(inputStr);
             boolean matchesEmail = user1.getEmail() != null && user1.getEmail().equalsIgnoreCase(inputStr);
             
-            if ((matchesUsername || matchesEmail) && user1.getPassword().equals(user.getPassword())) {
+            if ((matchesUsername || matchesEmail) && user.getPassword() != null && user.getPassword().equals(user1.getPassword())) {
                 return ResponseEntity.ok(buildAuthResponse(user1));
             }
         }
