@@ -34,10 +34,13 @@ export const getTradeById = async (id: string): Promise<Trade | undefined> => {
 };
 export const createTrade = async (
     payload: CreateTradePayload
-): Promise<{ trade: Trade; tradeCode: string }> => {
+): Promise<{ trade: Trade; tradeCode: string; riderCode: string }> => {
     const { data } = await api.post<Trade>("/trades/", payload);
-    // The backend now generates a short 5-digit human-friendly code.
-    return { trade: data, tradeCode: (data as any).tradeCode };
+    return {
+        trade: data,
+        tradeCode: (data as any).tradeCode,
+        riderCode: (data as any).riderCode,
+    };
 };
 export const acceptTradeByCode = async (code: string): Promise<Trade> => {
     const tradeCode = code.trim();

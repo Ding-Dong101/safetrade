@@ -33,6 +33,7 @@ export default function CreateTrade() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [tradeCode, setTradeCode] = useState<string | null>(null);
+    const [riderCode, setRiderCode] = useState<string | null>(null);
 
     const handleCreate = async () => {
         const nextErrors: Record<string, string> = {};
@@ -59,6 +60,7 @@ export default function CreateTrade() {
             });
             await refetch();
             setTradeCode(result.tradeCode);
+            setRiderCode(result.riderCode);
         } catch (err: any) {
             Alert.alert(
                 "Could not create trade",
@@ -74,6 +76,7 @@ export default function CreateTrade() {
         setDescription("");
         setPrice("");
         setTradeCode(null);
+        setRiderCode(null);
     };
 
     return (
@@ -182,6 +185,54 @@ export default function CreateTrade() {
                                 Tap to copy
                             </Text>
                         </TouchableOpacity>
+
+                        <Text
+                            style={{
+                                color: colors.muted,
+                                fontSize: 13,
+                                textAlign: "center",
+                                marginTop: spacing[3],
+                            }}
+                        >
+                            Share this code with your rider for delivery pickup.
+                        </Text>
+                        <TouchableOpacity
+                            onPress={async () => {
+                                await Clipboard.setStringAsync(riderCode ?? "");
+                                Alert.alert("Copied", "Rider code copied to clipboard.");
+                            }}
+                            style={{
+                                backgroundColor: colors.cardAlt,
+                                borderRadius: 12,
+                                paddingVertical: spacing[3],
+                                paddingHorizontal: spacing[8],
+                                borderWidth: 1,
+                                borderColor: colors.muted,
+                            }}
+                        >
+                            <Text
+                                style={{
+                                    color: colors.foreground,
+                                    fontSize: 24,
+                                    fontWeight: "800",
+                                    letterSpacing: 6,
+                                    textAlign: "center",
+                                }}
+                            >
+                                {riderCode}
+                            </Text>
+                            <Text
+                                style={{
+                                    color: colors.muted,
+                                    fontSize: 11,
+                                    textAlign: "center",
+                                    marginTop: 4,
+                                }}
+                            >
+                                Tap to copy
+                            </Text>
+                        </TouchableOpacity>
+
                         <View
                             style={{
                                 flexDirection: "row",
