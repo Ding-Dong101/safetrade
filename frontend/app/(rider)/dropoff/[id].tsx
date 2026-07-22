@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, ScrollView, Alert } from "react-native";
+import { View, Text, ScrollView, Alert, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ScreenHeader from "@/components/shared/ScreenHeader";
 import Card from "@/components/ui/Card";
@@ -9,6 +9,7 @@ import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { useTheme } from "@/hooks/useTheme";
 import { Trade } from "@/types/trade";
 import { getTradeForDropoff, riderConfirmDropoff } from "@/services/riderService";
+import { postDropoff } from "@/services/tradeService";
 import { formatCurrency } from "@/utils/formatCurrency";
 
 export default function RiderDropoff() {
@@ -21,6 +22,7 @@ export default function RiderDropoff() {
     const [isLoading, setIsLoading] = useState(true);
     const [isConfirming, setIsConfirming] = useState(false);
     const [verificationCode, setVerificationCode] = useState("");
+    const [dropoffType, setDropoffType] = useState<"POST" | "DIRECT">("POST");
 
     useEffect(() => {
         if (!id) return;
@@ -39,18 +41,27 @@ export default function RiderDropoff() {
 
     const handleConfirmDropoff = async () => {
         if (!id) return;
-        if (!verificationCode || verificationCode.trim().length < 5) {
-            Alert.alert("Invalid Code", "Please enter the verification code provided by the buyer.");
+        if (!verificationCode || verificationCode.trim().length < 4) {
+            Alert.alert("Invalid Code", "Please enter the verification code.");
             return;
         }
         try {
             setIsConfirming(true);
-            await riderConfirmDropoff(id, verificationCode);
-            Alert.alert(
-                "Delivery Confirmed",
-                "The trade ID has been verified. Funds have been released to the seller.",
-                [{ text: "Done", onPress: () => router.replace("/(rider)/home") }]
-            );
+            if (dropoffType === "DIRECT") {
+                await riderConfirmDropoff(id, verificationCode);
+                Alert.alert(
+                    "Delivery Confirmed",
+                    "The trade ID has been verified. Funds have been released to the seller.",
+                    [{ text: "Done", onPress: () => router.replace("/(rider)/home") }]
+                );
+            } else {
+                await postDropoff(id, verificationCode);
+                Alert.alert(
+                    "Post Drop-off Confirmed",
+                    "The package has been verified by the post agent. The buyer will be notified.",
+                    [{ text: "Done", onPress: () => router.replace("/(rider)/home") }]
+                );
+            }
         } catch (err: any) {
             Alert.alert("Error", err?.response?.data ?? err?.message ?? "Could not confirm drop-off.");
         } finally {
@@ -96,22 +107,53 @@ export default function RiderDropoff() {
                     </Text>
                 </Card>
 
-                <Card style={{ gap: spacing[2] }}>
-                    <Text style={{ color: colors.muted, fontSize: 13 }}>Trade ID (for your records)</Text>
-                    <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "500" }}>
-                        {(trade.title ?? "TRD").substring(0, 3).toUpperCase()}-{trade.id.substring(0, 8).toUpperCase()}
-                    </Text>
-                </Card>
+                {/* Drop-off Type Selector */}
+                <View style={{ flexDirection: "row", gap: spacing[2], marginTop: spacing[2] }}>
+                    <TouchableOpacity
+                        onPress={() => { setDropoffType("POST"); setVerificationCode(""); }}
+                        style={{
+                            flex: 1,
+                            backgroundColor: dropoffType === "POST" ? colors.primary : colors.card,
+                            padding: spacing[3],
+                            borderRadius: 8,
+                            alignItems: "center",
+                            borderWidth: 1,
+                            borderColor: dropoffType === "POST" ? colors.primary : colors.border
+                        }}
+                    >
+                        <Text style={{ color: dropoffType === "POST" ? "white" : colors.foreground, fontWeight: "600" }}>
+                            Post Agent
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => { setDropoffType("DIRECT"); setVerificationCode(""); }}
+                        style={{
+                            flex: 1,
+                            backgroundColor: dropoffType === "DIRECT" ? colors.primary : colors.card,
+                            padding: spacing[3],
+                            borderRadius: 8,
+                            alignItems: "center",
+                            borderWidth: 1,
+                            borderColor: dropoffType === "DIRECT" ? colors.primary : colors.border
+                        }}
+                    >
+                        <Text style={{ color: dropoffType === "DIRECT" ? "white" : colors.foreground, fontWeight: "600" }}>
+                            Direct to Buyer
+                        </Text>
+                    </TouchableOpacity>
+                </View>
 
                 <Card style={{ gap: spacing[3] }}>
                     <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "600" }}>
-                        Direct Delivery
+                        {dropoffType === "POST" ? "Drop-Off at Post Agent" : "Direct Delivery to Buyer"}
                     </Text>
                     <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
-                        Ask the buyer for their verification code to confirm drop-off and release funds.
+                        {dropoffType === "POST" 
+                            ? "Ask the Post Agent for their Drop-Off Code to confirm you delivered the package to them."
+                            : "Ask the Buyer for their Delivery Verification Code to confirm you delivered the package directly to them."}
                     </Text>
                     <Input
-                        placeholder="Enter Buyer Verification Code"
+                        placeholder={dropoffType === "POST" ? "Enter Post Agent Code" : "Enter Buyer Code"}
                         value={verificationCode}
                         onChangeText={setVerificationCode}
                         autoCapitalize="none"
@@ -119,7 +161,7 @@ export default function RiderDropoff() {
                 </Card>
 
                 <Button
-                    label="Confirm Drop-Off & Release Funds"
+                    label={dropoffType === "POST" ? "Confirm Drop-Off at Post" : "Confirm Direct Delivery"}
                     onPress={handleConfirmDropoff}
                     isLoading={isConfirming}
                 />

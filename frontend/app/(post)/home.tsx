@@ -75,27 +75,45 @@ const ParcelCard = ({ trade, onVerify }: ParcelCardProps) => {
                 </View>
 
                 <View style={{ alignItems: "flex-end", gap: 6 }}>
-                    <TextInput
-                        value={code}
-                        onChangeText={(value) => setCode(value.toUpperCase())}
-                        placeholder={codeLabel}
-                        placeholderTextColor={accent}
-                        autoCapitalize="characters"
-                        autoCorrect={false}
-                        onSubmitEditing={handleVerify}
-                        style={{
-                            borderWidth: 1.5,
-                            borderColor: accent,
-                            borderRadius: 8,
-                            paddingVertical: 6,
-                            paddingHorizontal: 12,
-                            color: colors.foreground,
-                            fontSize: 13,
-                            fontWeight: "600",
-                            minWidth: 140,
-                            textAlign: "center",
-                        }}
-                    />
+                    {isDropOff ? (
+                        <View
+                            style={{
+                                borderWidth: 1.5,
+                                borderColor: accent,
+                                borderRadius: 8,
+                                paddingVertical: 6,
+                                paddingHorizontal: 12,
+                                minWidth: 140,
+                                alignItems: "center",
+                            }}
+                        >
+                            <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "600" }}>
+                                {trade.dropOffCode ?? "N/A"}
+                            </Text>
+                        </View>
+                    ) : (
+                        <TextInput
+                            value={code}
+                            onChangeText={(value) => setCode(value.toUpperCase())}
+                            placeholder={codeLabel}
+                            placeholderTextColor={accent}
+                            autoCapitalize="characters"
+                            autoCorrect={false}
+                            onSubmitEditing={handleVerify}
+                            style={{
+                                borderWidth: 1.5,
+                                borderColor: accent,
+                                borderRadius: 8,
+                                paddingVertical: 6,
+                                paddingHorizontal: 12,
+                                color: colors.foreground,
+                                fontSize: 13,
+                                fontWeight: "600",
+                                minWidth: 140,
+                                textAlign: "center",
+                            }}
+                        />
+                    )}
                     <Text
                         style={{
                             color: accent,
@@ -108,7 +126,7 @@ const ParcelCard = ({ trade, onVerify }: ParcelCardProps) => {
                 </View>
             </View>
 
-            {code.trim().length > 0 && (
+            {!isDropOff && code.trim().length > 0 && (
                 <Button
                     label="Verify Code"
                     onPress={handleVerify}
