@@ -69,7 +69,7 @@ export default function Login() {
                 >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginBottom: spacing[2] }}>
                         <Image
-                            source={require("@/assets/images/icon.png")}
+                            source={require("@/assets/icon.png")}
                             style={{ width: 40, height: 40 }}
                             resizeMode="contain"
                         />
