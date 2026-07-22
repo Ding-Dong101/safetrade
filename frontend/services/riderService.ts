@@ -125,9 +125,9 @@ export const getTradeForDropoff = async (
 };
 
 // Rider confirms drop-off — this triggers automatic escrow release to the seller
-export const riderConfirmDropoff = async (tradeId: string): Promise<Trade> => {
+export const riderConfirmDropoff = async (tradeId: string, releaseCode: string): Promise<Trade> => {
     const { data } = await api.post<Trade>(`/trades/${tradeId}/rider-confirm`, {
-        tradeId,
+        releaseCode: releaseCode.trim(),
     });
     return data;
 };

@@ -306,25 +306,24 @@ const handleConfirmRiderDelivery = async () => {
                     )}
 
                 {isBuyer &&
-                    selectedTrade.status === "IN_TRANSIT" && (
-                        <Card style={{ gap: spacing[3] }}>
-                            <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "600" }}>
-                                Direct Delivery
-                            </Text>
-                            <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
-                                Enter the delivery code provided by the rider to confirm you have received the item.
-                            </Text>
-                            <Input
-                                placeholder="Enter rider's delivery code"
-                                value={riderCodeInput}
-                                onChangeText={setRiderCodeInput}
-                                autoCapitalize="none"
-                            />
-                            <Button
-                                label="Confirm Receipt"
-                                onPress={handleConfirmRiderDelivery}
-                                isLoading={isActing}
-                            />
+                    selectedTrade.status === "IN_TRANSIT" &&
+                    selectedTrade.releaseCode && (
+                        <Card>
+                            <TouchableOpacity
+                                onPress={async () => {
+                                    if (selectedTrade.releaseCode) {
+                                        await Clipboard.setStringAsync(selectedTrade.releaseCode);
+                                        Alert.alert("Copied", "Verification Code copied to clipboard!");
+                                    }
+                                }}
+                            >
+                                <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
+                                    Delivery Verification Code (Give this to the rider)
+                                </Text>
+                                <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "800" }}>
+                                    {selectedTrade.releaseCode}
+                                </Text>
+                            </TouchableOpacity>
                         </Card>
                     )}
 

@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ScreenHeader from "@/components/shared/ScreenHeader";
 import Card from "@/components/ui/Card";
+import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { useTheme } from "@/hooks/useTheme";
@@ -19,6 +20,7 @@ export default function RiderDropoff() {
     const [buyerUsername, setBuyerUsername] = useState<string>("");
     const [isLoading, setIsLoading] = useState(true);
     const [isConfirming, setIsConfirming] = useState(false);
+    const [verificationCode, setVerificationCode] = useState("");
 
     useEffect(() => {
         if (!id) return;
@@ -37,9 +39,13 @@ export default function RiderDropoff() {
 
     const handleConfirmDropoff = async () => {
         if (!id) return;
+        if (!verificationCode || verificationCode.trim().length < 5) {
+            Alert.alert("Invalid Code", "Please enter the verification code provided by the buyer.");
+            return;
+        }
         try {
             setIsConfirming(true);
-            await riderConfirmDropoff(id);
+            await riderConfirmDropoff(id, verificationCode);
             Alert.alert(
                 "Delivery Confirmed",
                 "The trade ID has been verified. Funds have been released to the seller.",
@@ -95,6 +101,21 @@ export default function RiderDropoff() {
                     <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "500" }}>
                         {(trade.title ?? "TRD").substring(0, 3).toUpperCase()}-{trade.id.substring(0, 8).toUpperCase()}
                     </Text>
+                </Card>
+
+                <Card style={{ gap: spacing[3] }}>
+                    <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "600" }}>
+                        Direct Delivery
+                    </Text>
+                    <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
+                        Ask the buyer for their verification code to confirm drop-off and release funds.
+                    </Text>
+                    <Input
+                        placeholder="Enter Buyer Verification Code"
+                        value={verificationCode}
+                        onChangeText={setVerificationCode}
+                        autoCapitalize="none"
+                    />
                 </Card>
 
                 <Button

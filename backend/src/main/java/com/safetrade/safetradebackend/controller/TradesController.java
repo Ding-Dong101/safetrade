@@ -261,6 +261,7 @@ public class TradesController {
         trade.setRiderId(request.getRiderId());
         trade.setRiderPickedUpAt(LocalDateTime.now());
         trade.setDropOffCode(generateCode());
+        trade.setReleaseCode(generateCode());
         trade.setStatus(TradeStatus.IN_TRANSIT);
 
         Trades saved = tradesRepository.save(trade);
@@ -416,8 +417,8 @@ public class TradesController {
         if (trade.getStatus() != TradeStatus.IN_TRANSIT) {
             return ResponseEntity.badRequest().body("Trade is not in transit");
         }
-        if (request.getTradeId() == null || !request.getTradeId().equalsIgnoreCase(trade.getId().toString())) {
-            return ResponseEntity.badRequest().body("Invalid Trade ID confirmation");
+        if (trade.getReleaseCode() == null || !trade.getReleaseCode().equalsIgnoreCase(request.getReleaseCode())) {
+            return ResponseEntity.badRequest().body("Invalid Buyer Verification Code");
         }
 
         // Trigger automatic escrow release to seller
@@ -490,6 +491,6 @@ public class TradesController {
 
     @Data
     public static class RiderConfirmRequest {
-        private String tradeId;
+        private String releaseCode;
     }
 }
