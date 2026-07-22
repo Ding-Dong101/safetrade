@@ -210,21 +210,37 @@ const handleConfirmRiderDelivery = async () => {
                 <Card style={{ gap: spacing[3] }}>
                     {[
                         {
-    label: "Buyer",
-    value: buyerName || "—",
-},
-{
-    label: "Seller",
-    value: sellerName || "—",
-},
-{
-    label: "Created",
-    value: formatDateTime(selectedTrade.createdAt),
-},
-{
-    label: "Trade Code",
-    value: (selectedTrade as any).tradeCode ?? selectedTrade.id,
-},
+                            label: "Buyer",
+                            value: buyerName || "—",
+                        },
+                        {
+                            label: "Seller",
+                            value: sellerName || "—",
+                        },
+                        {
+                            label: "Created",
+                            value: formatDateTime(selectedTrade.createdAt),
+                        },
+                        {
+                            label: "Trade Code",
+                            value: (selectedTrade as any).tradeCode ?? selectedTrade.id,
+                        },
+                        ...(isSeller && selectedTrade.riderCode ? [{
+                            label: "Rider Code",
+                            value: selectedTrade.riderCode,
+                        }] : []),
+                        ...(isSeller && selectedTrade.dispatchCode ? [{
+                            label: "Dispatch Code",
+                            value: selectedTrade.dispatchCode,
+                        }] : []),
+                        ...(isSeller && selectedTrade.dropOffCode ? [{
+                            label: "Post Drop-Off Code",
+                            value: selectedTrade.dropOffCode,
+                        }] : []),
+                        ...(isSeller && selectedTrade.releaseCode ? [{
+                            label: "Delivery Code",
+                            value: selectedTrade.releaseCode,
+                        }] : []),
                     ].map((item) => (
                         <View
                             key={item.label}

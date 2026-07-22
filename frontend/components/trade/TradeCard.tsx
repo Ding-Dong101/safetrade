@@ -175,6 +175,19 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
                 </TouchableOpacity>
             )}
 
+            {role === "seller" && trade.riderCode && (
+                <TouchableOpacity
+                    onPress={async () => {
+                        await Clipboard.setStringAsync(trade.riderCode!);
+                        Alert.alert("Copied", "Rider Code copied to clipboard!");
+                    }}
+                >
+                    <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "600", marginBottom: spacing[1] }}>
+                        Rider Code: {trade.riderCode} (Tap to copy)
+                    </Text>
+                </TouchableOpacity>
+            )}
+
             {role === "seller" && trade.releaseCode && (
                 <TouchableOpacity
                     onPress={async () => {
