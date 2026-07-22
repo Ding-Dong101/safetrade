@@ -315,7 +315,11 @@ public class TradesController {
             return ResponseEntity.badRequest().body("Invalid buyer release code");
         }
 
-        String recipientCode = "RCP_dummy_seller";
+        Optional<Users> sellerOpt = usersRepository.findById(java.util.Objects.requireNonNull(UUID.fromString(trade.getSellerId())));
+        String recipientCode = sellerOpt.map(Users::getPaystackRecipientCode).orElse(null);
+        if (recipientCode == null || recipientCode.isEmpty()) {
+            return ResponseEntity.badRequest().body("Seller has not set up bank details for payout");
+        }
         String escrowResponse = escrowService.releaseFunds(trade.getId(), recipientCode, trade.getPrice());
         if (escrowResponse == null) {
             return ResponseEntity.internalServerError().body("Escrow release failed or Escrow service is down");
@@ -371,7 +375,11 @@ public class TradesController {
         }
 
         // Trigger automatic escrow release to seller
-        String recipientCode = "RCP_dummy_seller";
+        Optional<Users> sellerOpt = usersRepository.findById(java.util.Objects.requireNonNull(UUID.fromString(trade.getSellerId())));
+        String recipientCode = sellerOpt.map(Users::getPaystackRecipientCode).orElse(null);
+        if (recipientCode == null || recipientCode.isEmpty()) {
+            return ResponseEntity.badRequest().body("Seller has not set up bank details for payout");
+        }
         String escrowResponse = escrowService.releaseFunds(trade.getId(), recipientCode, trade.getPrice());
         if (escrowResponse == null) {
             return ResponseEntity.internalServerError().body("Escrow release failed or Escrow service is down");

@@ -6,11 +6,11 @@ import {
     ScrollView,
     KeyboardAvoidingView,
     Platform,
-    Alert,
+    TouchableOpacity,
 } from "react-native";
+import Toast from "react-native-toast-message";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { useTheme } from "@/hooks/useTheme";
@@ -50,56 +50,68 @@ export default function SignUp() {
         });
 
         if (result.success) {
-            Alert.alert("Account Created", "You can now log in with your details.", [
-                { text: "OK", onPress: () => router.replace("/login") },
-            ]);
+            Toast.show({
+                type: 'success',
+                text1: 'Account Created',
+                text2: 'You can now log in with your details.',
+                onHide: () => router.replace("/login")
+            });
         } else {
-            Alert.alert("Sign Up Failed", result.error);
+            Toast.show({
+                type: 'error',
+                text1: 'Sign Up Failed',
+                text2: result.error,
+            });
         }
     };
 
     return (
         <KeyboardAvoidingView
-            style={{ flex: 1, backgroundColor: colors.background }}
+            style={{ flex: 1, backgroundColor: colors.primary }}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
             <ScrollView
-                contentContainerStyle={{
-                    flexGrow: 1,
-                    justifyContent: "center",
-                    paddingHorizontal: spacing[5],
-                    paddingTop: insets.top + spacing[6],
-                    paddingBottom: insets.bottom + spacing[6],
-                }}
+                contentContainerStyle={{ flexGrow: 1 }}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
                 <View
                     style={{
-                        flexDirection: "row",
                         alignItems: "center",
                         justifyContent: "center",
-                        gap: spacing[2],
-                        marginBottom: spacing[8],
+                        paddingTop: insets.top + spacing[12],
+                        paddingBottom: spacing[12],
                     }}
                 >
-                    <Image
-                        source={require("@/assets/icons/logo.png")}
-                        style={{ width: 44, height: 44 }}
-                        resizeMode="contain"
-                    />
-                    <Text
-                        style={{
-                            color: colors.foreground,
-                            fontSize: 30,
-                            fontWeight: "800",
-                        }}
-                    >
-                        SafeTrade
-                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginBottom: spacing[2] }}>
+                        <Image
+                            source={require("@/assets/icons/logo.png")}
+                            style={{ width: 44, height: 44, tintColor: "#fff" }}
+                            resizeMode="contain"
+                        />
+                        <Text style={{ color: "#ffffff", fontSize: 32, fontWeight: "800" }}>
+                            SafeTrade
+                        </Text>
+                    </View>
+                    <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 16 }}>Create an account</Text>
                 </View>
 
-                <Card style={{ padding: spacing[6], borderRadius: 20 }}>
+                <View
+                    style={{
+                        flex: 1,
+                        backgroundColor: colors.background,
+                        borderTopLeftRadius: 40,
+                        borderTopRightRadius: 40,
+                        paddingHorizontal: spacing[6],
+                        paddingTop: spacing[10],
+                        paddingBottom: insets.bottom + spacing[6],
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: -4 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 16,
+                        elevation: 10,
+                    }}
+                >
                     <View style={{ flexDirection: "row", gap: spacing[3] }}>
                         <Input
                             label="First Name"
@@ -149,18 +161,15 @@ export default function SignUp() {
                         style={{ marginTop: spacing[2] }}
                     />
 
-                    <View style={{ alignItems: "center", marginTop: spacing[5] }}>
-                        <Text style={{ color: colors.muted, fontSize: 13 }}>
+                    <View style={{ alignItems: "center", marginTop: spacing[5], gap: spacing[3] }}>
+                        <Text style={{ color: colors.muted }}>
                             Already have an account?{" "}
-                            <Text
-                                style={{ color: colors.primary, fontWeight: "700" }}
-                                onPress={() => router.replace("/login")}
-                            >
-                                Log In
-                            </Text>
                         </Text>
+                        <TouchableOpacity onPress={() => router.replace("/login")}>
+                            <Text style={{ color: colors.primary, fontWeight: "700" }}>Log In</Text>
+                        </TouchableOpacity>
                     </View>
-                </Card>
+                </View>
             </ScrollView>
         </KeyboardAvoidingView>
     );

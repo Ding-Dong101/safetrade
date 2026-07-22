@@ -55,12 +55,19 @@ const Button = ({
             disabled={disabled || isLoading}
             style={[
                 {
-                    paddingVertical: 12,
-                    paddingHorizontal: 24,
-                    borderRadius: 8,
+                    paddingVertical: 16,
+                    paddingHorizontal: 32,
+                    borderRadius: 9999,
                     alignItems: "center",
                     justifyContent: "center",
                     opacity: disabled || isLoading ? 0.6 : 1,
+                    ...(variant === "primary" ? {
+                        shadowColor: colors.primary,
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 8,
+                        elevation: 5,
+                    } : {})
                 },
                 container,
                 style,

@@ -39,6 +39,9 @@ public class Users {
     @Column
     private String pushToken;
 
+    @Column
+    private String paystackRecipientCode;
+
     @ManyToMany
     private List<Trades> trades;
 }

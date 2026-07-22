@@ -12,14 +12,17 @@ import java.util.UUID;
 @RestController
 @RequestMapping({"/api/v2/users", "/api/users", "/api/auth"})
 public class UsersController {
+    
+    private final java.util.Set<String> processedTopUps = new java.util.concurrent.ConcurrentHashMap<String, Boolean>().keySet(true);
 
     private final UsersRepository usersRepository;
-
     private final com.safetrade.safetradebackend.security.JwtService jwtService;
+    private final com.safetrade.safetradebackend.service.EscrowService escrowService;
 
-    public UsersController(UsersRepository usersRepository, com.safetrade.safetradebackend.security.JwtService jwtService) {
+    public UsersController(UsersRepository usersRepository, com.safetrade.safetradebackend.security.JwtService jwtService, com.safetrade.safetradebackend.service.EscrowService escrowService) {
         this.usersRepository = usersRepository;
         this.jwtService = jwtService;
+        this.escrowService = escrowService;
     }
 
     @PostMapping("/register")
@@ -82,17 +85,69 @@ public class UsersController {
         return ResponseEntity.notFound().build();
     }
 
-    @PostMapping("/topup")
-    public ResponseEntity<?> topUpWallet(@RequestBody java.util.Map<String, Double> body, java.security.Principal principal) {
+    @PostMapping("/topup/initialize")
+    public ResponseEntity<?> initializeTopUp(@RequestBody java.util.Map<String, Double> body, java.security.Principal principal) {
         if(principal == null) return ResponseEntity.status(401).build();
         Double amount = body.get("amount");
         if(amount == null || amount <= 0) return ResponseEntity.badRequest().body("Invalid amount");
 
         for(Users user : usersRepository.findAll()) {
             if(user.getUsername().equals(principal.getName())) {
-                user.setBalance((user.getBalance() == null ? 0.0 : user.getBalance()) + amount);
+                String paystackResponse = escrowService.initializeTopUp(user.getEmail(), amount);
+                return ResponseEntity.ok(paystackResponse);
+            }
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/topup/verify")
+    public ResponseEntity<?> verifyTopUp(@RequestBody java.util.Map<String, String> body, java.security.Principal principal) {
+        if(principal == null) return ResponseEntity.status(401).build();
+        String reference = body.get("reference");
+        if(reference == null || reference.isEmpty()) return ResponseEntity.badRequest().body("Reference is required");
+
+        if (processedTopUps.contains(reference)) {
+            return ResponseEntity.badRequest().body("Transaction already processed");
+        }
+
+        Double paidAmount = escrowService.verifyTopUpPayment(reference, 100.0);
+        if (paidAmount == null) {
+            return ResponseEntity.badRequest().body("Payment could not be verified");
+        }
+
+        for(Users user : usersRepository.findAll()) {
+            if(user.getUsername().equals(principal.getName())) {
+                user.setBalance((user.getBalance() == null ? 0.0 : user.getBalance()) + paidAmount);
                 usersRepository.save(user);
+                processedTopUps.add(reference);
                 return ResponseEntity.ok(buildAuthResponse(user).getUser());
+            }
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/bank-details")
+    public ResponseEntity<?> updateBankDetails(@RequestBody java.util.Map<String, String> body, java.security.Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
+
+        String name = body.get("name");
+        String accountNumber = body.get("accountNumber");
+        String bankCode = body.get("bankCode");
+
+        if (name == null || accountNumber == null || bankCode == null) {
+            return ResponseEntity.badRequest().body("name, accountNumber, and bankCode are required");
+        }
+
+        String recipientCode = escrowService.createTransferRecipient(name, accountNumber, bankCode);
+        if (recipientCode == null) {
+            return ResponseEntity.internalServerError().body("Failed to create Paystack transfer recipient");
+        }
+
+        for (Users user : usersRepository.findAll()) {
+            if (user.getUsername().equals(principal.getName())) {
+                user.setPaystackRecipientCode(recipientCode);
+                usersRepository.save(user);
+                return ResponseEntity.ok(java.util.Map.of("message", "Bank details updated successfully", "recipientCode", recipientCode));
             }
         }
         return ResponseEntity.notFound().build();

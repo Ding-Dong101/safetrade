@@ -1,5 +1,6 @@
 import { useMemo, useRef } from "react";
 import { Tabs, useRouter, usePathname } from "expo-router";
+import { BlurView } from "expo-blur";
 import { View, PanResponder } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -111,26 +112,29 @@ const PortalTabs = ({ tabs, role }: PortalTabsProps) => {
                     sceneStyle: { backgroundColor: colors.background },
                     tabBarStyle: {
                         position: "absolute",
-                        bottom: insets.bottom > 0 ? insets.bottom : 12,
-                        marginHorizontal: tabBar.horizontalInset,
-                        height: tabBar.height,
-                        borderRadius: tabBar.radius,
-                        backgroundColor: colors.card,
-                        borderTopWidth: 1,
+                        bottom: insets.bottom > 0 ? insets.bottom : 20,
+                        marginHorizontal: 24,
+                        height: 70,
+                        borderRadius: 35,
+                        borderTopWidth: 0,
                         borderWidth: 1,
-                        borderColor: colors.border,
-                        // Kill the safe-area padding the navigator injects into the
-                        // bar — it pushes icons off-center in a fixed-height pill.
+                        borderColor: "rgba(255,255,255,0.2)",
+                        backgroundColor: "transparent",
                         paddingBottom: 0,
                         paddingTop: 0,
-                        elevation: 8,
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 6 },
-                        shadowOpacity: 0.15,
-                        shadowRadius: 12,
+                        elevation: 0,
+                        shadowColor: "transparent",
+                        overflow: "hidden",
                     },
+                    tabBarBackground: () => (
+                        <BlurView
+                            intensity={80}
+                            tint={colors.card === "#ffffff" ? "light" : "dark"}
+                            style={{ flex: 1, backgroundColor: colors.card === "#ffffff" ? "rgba(255,255,255,0.5)" : "rgba(30,30,30,0.5)" }}
+                        />
+                    ),
                     tabBarItemStyle: {
-                        height: tabBar.height,
+                        height: 70,
                         paddingVertical: 0,
                         justifyContent: "center",
                         alignItems: "center",

@@ -10,6 +10,8 @@ const request = async <T = any>(
 ): Promise<{ data: T }> => {
     const token = useAuthStore.getState().token;
 
+    console.log(`[API Request] ${method} ${BASE_URL}${path}`, body ? body : "");
+
     const response = await fetch(`${BASE_URL}${path}`, {
         method,
         headers: {
@@ -22,6 +24,7 @@ const request = async <T = any>(
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
+        console.error(`[API Error] ${method} ${path} - Status: ${response.status}`, data);
         // Stored token expired or was rejected — drop the session so the app
         // redirects to login instead of failing on every request.
         if (response.status === 401 && token && !path.includes("/login")) {
@@ -32,6 +35,7 @@ const request = async <T = any>(
         throw error;
     }
 
+    console.log(`[API Response] ${method} ${path} - Status: ${response.status}`);
     return { data };
 };
 

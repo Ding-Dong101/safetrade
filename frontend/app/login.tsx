@@ -6,11 +6,11 @@ import {
     ScrollView,
     KeyboardAvoidingView,
     Platform,
-    Alert,
+    TouchableOpacity,
 } from "react-native";
+import Toast from "react-native-toast-message";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { useTheme } from "@/hooks/useTheme";
@@ -35,54 +35,67 @@ export default function Login() {
 
         const result = await login({ username: username.trim(), password });
         if (result.success) {
+            Toast.show({
+                type: 'success',
+                text1: 'Login Successful',
+            });
             router.replace("/(buyer)/home");
         } else {
-            Alert.alert("Login Failed", result.error);
+            Toast.show({
+                type: 'error',
+                text1: 'Login Failed',
+                text2: result.error,
+            });
         }
     };
 
     return (
         <KeyboardAvoidingView
-            style={{ flex: 1, backgroundColor: colors.background }}
+            style={{ flex: 1, backgroundColor: colors.primary }}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
             <ScrollView
-                contentContainerStyle={{
-                    flexGrow: 1,
-                    justifyContent: "center",
-                    paddingHorizontal: spacing[5],
-                    paddingTop: insets.top + spacing[6],
-                    paddingBottom: insets.bottom + spacing[6],
-                }}
+                contentContainerStyle={{ flexGrow: 1 }}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
                 <View
                     style={{
-                        flexDirection: "row",
                         alignItems: "center",
                         justifyContent: "center",
-                        gap: spacing[2],
-                        marginBottom: spacing[10],
+                        paddingTop: insets.top + spacing[12],
+                        paddingBottom: spacing[12],
                     }}
                 >
-                    <Image
-                        source={require("@/assets/icons/logo.png")}
-                        style={{ width: 44, height: 44 }}
-                        resizeMode="contain"
-                    />
-                    <Text
-                        style={{
-                            color: colors.foreground,
-                            fontSize: 30,
-                            fontWeight: "800",
-                        }}
-                    >
-                        SafeTrade
-                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginBottom: spacing[2] }}>
+                        <Image
+                            source={require("@/assets/icons/logo.png")}
+                            style={{ width: 44, height: 44, tintColor: "#fff" }}
+                            resizeMode="contain"
+                        />
+                        <Text style={{ color: "#ffffff", fontSize: 32, fontWeight: "800" }}>
+                            SafeTrade
+                        </Text>
+                    </View>
+                    <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 16 }}>Sign in to continue</Text>
                 </View>
 
-                <Card style={{ padding: spacing[6], borderRadius: 20 }}>
+                <View
+                    style={{
+                        flex: 1,
+                        backgroundColor: colors.background,
+                        borderTopLeftRadius: 40,
+                        borderTopRightRadius: 40,
+                        paddingHorizontal: spacing[6],
+                        paddingTop: spacing[10],
+                        paddingBottom: insets.bottom + spacing[6],
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: -4 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 16,
+                        elevation: 10,
+                    }}
+                >
                     <Input
                         label="Username"
                         value={username}
@@ -106,31 +119,15 @@ export default function Login() {
                         style={{ marginTop: spacing[2] }}
                     />
 
-                    <View
-                        style={{
-                            alignItems: "center",
-                            marginTop: spacing[6],
-                            gap: spacing[3],
-                        }}
-                    >
-                        <View
-                            style={{
-                                width: "60%",
-                                height: 1,
-                                backgroundColor: colors.border,
-                            }}
-                        />
-                        <Text style={{ color: colors.muted, fontSize: 13 }}>
-                            No Account?
+                    <View style={{ alignItems: "center", marginTop: spacing[6], gap: spacing[3] }}>
+                        <Text style={{ color: colors.muted }}>
+                            No Account?{" "}
                         </Text>
-                        <Button
-                            label="Sign Up"
-                            variant="outlined"
-                            onPress={() => router.push("/sign-up")}
-                            style={{ alignSelf: "stretch" }}
-                        />
+                        <TouchableOpacity onPress={() => router.push("/sign-up")}>
+                            <Text style={{ color: colors.primary, fontWeight: "700" }}>Sign Up</Text>
+                        </TouchableOpacity>
                     </View>
-                </Card>
+                </View>
             </ScrollView>
         </KeyboardAvoidingView>
     );

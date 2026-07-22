@@ -1,4 +1,7 @@
+import "../global.css";
 import { Stack } from "expo-router";
+import Toast from 'react-native-toast-message';
+import { Text } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
@@ -23,6 +26,7 @@ export default function RootLayout() {
                 <Stack.Screen name="(rider)" />
                 <Stack.Screen name="(post)" />
             </Stack>
+            <Toast />
         </SafeAreaProvider>
     );
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, ScrollView, Switch, TouchableOpacity, Alert } from "react-native";
+import { View, Text, ScrollView, Switch, TouchableOpacity, Alert, Platform, Modal, TextInput, KeyboardAvoidingView, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -8,6 +8,8 @@ import Card from "@/components/ui/Card";
 import Avatar from "@/components/ui/Avatar";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
+import { updateBankDetails } from "@/services/authService";
+import Toast from "react-native-toast-message";
 
 interface SettingRowProps {
     icon: keyof typeof Ionicons.glyphMap;
@@ -58,6 +60,34 @@ const SettingsScreen = () => {
     const fullName =
         [user?.firstName, user?.lastName].filter(Boolean).join(" ") || user?.username;
 
+    const [isBankModalVisible, setBankModalVisible] = useState(false);
+    const [sellerName, setSellerName] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState("");
+    const [network, setNetwork] = useState("MTN"); // MTN or VOD (Telecel)
+    const [isSavingBank, setIsSavingBank] = useState(false);
+
+    const handleSaveBankDetails = async () => {
+        if (!sellerName || !phoneNumber) {
+            Alert.alert("Error", "Please fill in all fields");
+            return;
+        }
+        setIsSavingBank(true);
+        try {
+            await updateBankDetails({
+                name: sellerName,
+                accountNumber: phoneNumber,
+                bankCode: network,
+            });
+            Toast.show({ type: "success", text1: "Payment details saved!" });
+            setBankModalVisible(false);
+        } catch (error: any) {
+            console.error("Save Bank Details Error:", error.response?.data || error);
+            Alert.alert("Error", error.message || "Failed to save payment details");
+        } finally {
+            setIsSavingBank(false);
+        }
+    };
+
     const handlePickAvatar = async () => {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) {
@@ -80,18 +110,26 @@ const SettingsScreen = () => {
         }
     };
 
-    const handleLogout = () => {
-        Alert.alert("Log Out", "Are you sure you want to log out?", [
-            { text: "Cancel", style: "cancel" },
-            {
-                text: "Log Out",
-                style: "destructive",
-                onPress: async () => {
-                    await logout();
-                    router.replace("/login");
+    const handleLogout = async () => {
+        if (Platform.OS === "web") {
+            const confirmed = window.confirm("Are you sure you want to log out?");
+            if (confirmed) {
+                await logout();
+                router.replace("/login");
+            }
+        } else {
+            Alert.alert("Log Out", "Are you sure you want to log out?", [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Log Out",
+                    style: "destructive",
+                    onPress: async () => {
+                        await logout();
+                        router.replace("/login");
+                    },
                 },
-            },
-        ]);
+            ]);
+        }
     };
 
     return (
@@ -208,6 +246,11 @@ const SettingsScreen = () => {
                     }
                 />
                 <SettingRow
+                    icon="card-outline"
+                    label="Payment Details (Mobile Money)"
+                    onPress={() => setBankModalVisible(true)}
+                />
+                <SettingRow
                     icon="shield-checkmark-outline"
                     label="Privacy and Security"
                     onPress={() =>
@@ -245,6 +288,82 @@ const SettingsScreen = () => {
                     SafeTrade v1.0.0
                 </Text>
             </View>
+
+            <Modal visible={isBankModalVisible} animationType="slide" transparent>
+                <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.5)" }}>
+                    <View style={{ backgroundColor: colors.background, padding: spacing[6], borderTopLeftRadius: 24, borderTopRightRadius: 24 }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing[6] }}>
+                            <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: "700" }}>Payment Details</Text>
+                            <TouchableOpacity onPress={() => setBankModalVisible(false)}>
+                                <Ionicons name="close" size={24} color={colors.foreground} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={{ color: colors.muted, marginBottom: 8, fontSize: 14 }}>Select Network</Text>
+                        <View style={{ flexDirection: "row", gap: spacing[3], marginBottom: spacing[4] }}>
+                            <TouchableOpacity
+                                onPress={() => setNetwork("MTN")}
+                                style={{
+                                    flex: 1,
+                                    padding: 12,
+                                    borderRadius: 12,
+                                    borderWidth: 1,
+                                    borderColor: network === "MTN" ? colors.primary : colors.border,
+                                    backgroundColor: network === "MTN" ? `${colors.primary}15` : colors.card,
+                                    alignItems: "center"
+                                }}
+                            >
+                                <Text style={{ color: network === "MTN" ? colors.primary : colors.foreground, fontWeight: "600" }}>MTN</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => setNetwork("VOD")}
+                                style={{
+                                    flex: 1,
+                                    padding: 12,
+                                    borderRadius: 12,
+                                    borderWidth: 1,
+                                    borderColor: network === "VOD" ? colors.primary : colors.border,
+                                    backgroundColor: network === "VOD" ? `${colors.primary}15` : colors.card,
+                                    alignItems: "center"
+                                }}
+                            >
+                                <Text style={{ color: network === "VOD" ? colors.primary : colors.foreground, fontWeight: "600" }}>Telecel</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={{ color: colors.muted, marginBottom: 8, fontSize: 14 }}>Name of Seller</Text>
+                        <TextInput
+                            value={sellerName}
+                            onChangeText={setSellerName}
+                            placeholder="e.g. John Doe"
+                            placeholderTextColor={colors.muted}
+                            style={{ backgroundColor: colors.card, color: colors.foreground, padding: 16, borderRadius: 12, marginBottom: spacing[4], borderWidth: 1, borderColor: colors.border }}
+                        />
+
+                        <Text style={{ color: colors.muted, marginBottom: 8, fontSize: 14 }}>Phone Number</Text>
+                        <TextInput
+                            value={phoneNumber}
+                            onChangeText={setPhoneNumber}
+                            placeholder="e.g. 0541234567"
+                            keyboardType="numeric"
+                            placeholderTextColor={colors.muted}
+                            style={{ backgroundColor: colors.card, color: colors.foreground, padding: 16, borderRadius: 12, marginBottom: spacing[6], borderWidth: 1, borderColor: colors.border }}
+                        />
+
+                        <TouchableOpacity 
+                            onPress={handleSaveBankDetails} 
+                            disabled={isSavingBank}
+                            style={{ backgroundColor: colors.primary, padding: 16, borderRadius: 12, alignItems: "center" }}
+                        >
+                            {isSavingBank ? (
+                                <ActivityIndicator color={colors.background} />
+                            ) : (
+                                <Text style={{ color: colors.background, fontWeight: "700", fontSize: 16 }}>Save Payment Details</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
         </ScrollView>
     );
 };

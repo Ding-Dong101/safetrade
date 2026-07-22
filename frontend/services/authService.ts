@@ -37,3 +37,12 @@ export const register = async (
 export const logout = async (): Promise<void> => {
     // No backend logout endpoint (stateless JWT) — clearing the store is enough.
 };
+
+export const updateBankDetails = async (details: {
+    name: string;
+    accountNumber: string;
+    bankCode: string;
+}): Promise<{ message: string; recipientCode: string }> => {
+    const { data } = await api.post("/users/bank-details", details);
+    return data;
+};
