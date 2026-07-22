@@ -41,12 +41,16 @@ public class UsersController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Users user) {
+        String inputStr = user.getUsername() != null ? user.getUsername().trim() : "";
         for (Users user1 : usersRepository.findAll()) {
-            if (user1.getUsername().equals(user.getUsername()) && user1.getPassword().equals(user.getPassword())) {
+            boolean matchesUsername = user1.getUsername() != null && user1.getUsername().equalsIgnoreCase(inputStr);
+            boolean matchesEmail = user1.getEmail() != null && user1.getEmail().equalsIgnoreCase(inputStr);
+            
+            if ((matchesUsername || matchesEmail) && user1.getPassword().equals(user.getPassword())) {
                 return ResponseEntity.ok(buildAuthResponse(user1));
             }
         }
-        return ResponseEntity.status(401).body(java.util.Map.of("error", "Invalid username or password"));
+        return ResponseEntity.status(401).body(java.util.Map.of("error", "Invalid username/email or password"));
     }
 
     @GetMapping({"/{id}", "/get/id/{id}"})
