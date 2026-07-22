@@ -1,7 +1,6 @@
 import { useAuthStore } from "@/store/authStore";
 
-const BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ?? "https://safetrade-or1w.onrender.com/api";
+const BASE_URL = "https://safetrade-or1w.onrender.com/api";
  
 const request = async <T = any>(
     method: string,
@@ -21,7 +20,13 @@ const request = async <T = any>(
         body: body !== undefined ? JSON.stringify(body) : undefined,
     });
 
-    const data = await response.json().catch(() => null);
+    const text = await response.text();
+    let data: any = null;
+    try {
+        data = JSON.parse(text);
+    } catch {
+        data = text || null;
+    }
 
     if (!response.ok) {
         console.error(`[API Error] ${method} ${path} - Status: ${response.status}`, data);

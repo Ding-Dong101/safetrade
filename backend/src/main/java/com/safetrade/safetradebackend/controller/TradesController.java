@@ -380,7 +380,7 @@ public class TradesController {
 
     @GetMapping("/rider-code/{code}")
     public ResponseEntity<?> getTradeByRiderCode(@PathVariable String code) {
-        Optional<Trades> optionalTrade = tradesRepository.findByRiderCode(code);
+        Optional<Trades> optionalTrade = tradesRepository.findByDispatchCode(code);
         if (optionalTrade.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -398,8 +398,6 @@ public class TradesController {
             return ResponseEntity.badRequest().body("Rider ID is required");
         }
         trade.setRiderId(request.getRiderId());
-        trade.setRiderPickedUpAt(LocalDateTime.now());
-        trade.setStatus(TradeStatus.IN_TRANSIT);
         Trades saved = tradesRepository.save(trade);
 
         sendNotification(trade.getBuyerId(), "IN_TRANSIT", "Rider has accepted the delivery and it is in transit.");
