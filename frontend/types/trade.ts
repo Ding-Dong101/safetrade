@@ -18,6 +18,7 @@ export interface Trade {
     status: TradeStatus;
     title?: string;
     description?: string;
+    tradeCode?: string;
     dispatchCode?: string;
     dropOffCode?: string;
     releaseCode?: string;

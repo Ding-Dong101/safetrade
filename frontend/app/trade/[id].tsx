@@ -305,6 +305,50 @@ const handleConfirmRiderDelivery = async () => {
                         </Card>
                     )}
 
+                {isSeller &&
+                    selectedTrade.status === "IN_TRANSIT" &&
+                    selectedTrade.releaseCode && (
+                        <Card>
+                            <TouchableOpacity
+                                onPress={async () => {
+                                    if (selectedTrade.releaseCode) {
+                                        await Clipboard.setStringAsync(selectedTrade.releaseCode);
+                                        Alert.alert("Copied", "Delivery Code copied to clipboard!");
+                                    }
+                                }}
+                            >
+                                <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
+                                    Delivery Code (share with buyer if needed - tap to copy)
+                                </Text>
+                                <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "800" }}>
+                                    {selectedTrade.releaseCode}
+                                </Text>
+                            </TouchableOpacity>
+                        </Card>
+                    )}
+
+                {isSeller &&
+                    selectedTrade.status === "IN_TRANSIT" &&
+                    selectedTrade.dropOffCode && (
+                        <Card>
+                            <TouchableOpacity
+                                onPress={async () => {
+                                    if (selectedTrade.dropOffCode) {
+                                        await Clipboard.setStringAsync(selectedTrade.dropOffCode);
+                                        Alert.alert("Copied", "Post Drop-Off Code copied to clipboard!");
+                                    }
+                                }}
+                            >
+                                <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
+                                    Post Drop-Off Code (for testing - tap to copy)
+                                </Text>
+                                <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "800" }}>
+                                    {selectedTrade.dropOffCode}
+                                </Text>
+                            </TouchableOpacity>
+                        </Card>
+                    )}
+
                 {isBuyer &&
                     selectedTrade.status === "IN_TRANSIT" &&
                     selectedTrade.releaseCode && (

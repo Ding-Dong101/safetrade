@@ -162,6 +162,45 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
                 </TouchableOpacity>
             )}
 
+            {role === "seller" && trade.tradeCode && (
+                <TouchableOpacity
+                    onPress={async () => {
+                        await Clipboard.setStringAsync(trade.tradeCode!);
+                        Alert.alert("Copied", "Trade Code copied to clipboard!");
+                    }}
+                >
+                    <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "600", marginBottom: spacing[1] }}>
+                        Trade Code: {trade.tradeCode} (Tap to copy)
+                    </Text>
+                </TouchableOpacity>
+            )}
+
+            {role === "seller" && trade.releaseCode && (
+                <TouchableOpacity
+                    onPress={async () => {
+                        await Clipboard.setStringAsync(trade.releaseCode!);
+                        Alert.alert("Copied", "Delivery Code copied to clipboard!");
+                    }}
+                >
+                    <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "600", marginBottom: spacing[1] }}>
+                        Delivery Code: {trade.releaseCode} (Tap to copy)
+                    </Text>
+                </TouchableOpacity>
+            )}
+
+            {role === "seller" && trade.dropOffCode && (
+                <TouchableOpacity
+                    onPress={async () => {
+                        await Clipboard.setStringAsync(trade.dropOffCode!);
+                        Alert.alert("Copied", "Post Drop-Off Code copied to clipboard!");
+                    }}
+                >
+                    <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "600", marginBottom: spacing[1] }}>
+                        Post Drop-Off Code: {trade.dropOffCode} (Tap to copy)
+                    </Text>
+                </TouchableOpacity>
+            )}
+
             {pendingVerification && (
                 <Text
                     style={{
