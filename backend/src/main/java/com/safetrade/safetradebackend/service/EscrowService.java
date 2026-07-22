@@ -33,8 +33,7 @@ public class EscrowService {
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
             return response.getBody();
         } catch (Exception e) {
-            System.out.println("Paystack fundEscrow failed (Likely invalid API keys). Mocking success for demo. Error: " + e.getMessage());
-            return "{\"status\":true,\"message\":\"Authorization URL created (MOCK)\",\"data\":{\"authorization_url\":\"https://mock-paystack.com\",\"access_code\":\"mock_code\",\"reference\":\"trade_" + tradeId + "\"}}";
+            throw new RuntimeException("Paystack fundEscrow failed: " + e.getMessage(), e);
         }
     }
 
@@ -44,10 +43,10 @@ public class EscrowService {
         try {
             HttpEntity<Void> request = new HttpEntity<>(paystackConfig.authHeaders());
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
-            return response.getBody().contains("\"status\":\"success\"");
+            return response.getBody() != null && response.getBody().contains("\"status\":\"success\"");
         } catch (Exception e) {
-            System.out.println("Paystack verifyPayment failed. Mocking success for demo. Error: " + e.getMessage());
-            return true;
+            System.out.println("Paystack verifyPayment failed: " + e.getMessage());
+            return false;
         }
     }
 
@@ -67,8 +66,7 @@ public class EscrowService {
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
             return response.getBody();
         } catch (Exception e) {
-            System.out.println("Paystack initializeTopUp failed. Mocking success. Error: " + e.getMessage());
-            return "{\"status\":true,\"message\":\"Authorization URL created (MOCK)\",\"data\":{\"authorization_url\":\"https://mock-paystack.com\",\"access_code\":\"mock_code\",\"reference\":\"" + reference + "\"}}";
+            throw new RuntimeException("Paystack initializeTopUp failed: " + e.getMessage(), e);
         }
     }
 
@@ -88,8 +86,8 @@ public class EscrowService {
             }
             return null;
         } catch (Exception e) {
-            System.out.println("Paystack verifyTopUpPayment failed. Mocking success. Error: " + e.getMessage());
-            return fallbackMockAmount != null ? fallbackMockAmount : 100.0;
+            System.out.println("Paystack verifyTopUpPayment failed: " + e.getMessage());
+            return null;
         }
     }
 
@@ -114,8 +112,7 @@ public class EscrowService {
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
             return response.getBody();
         } catch (Exception e) {
-            System.out.println("Paystack releaseFunds failed. Mocking success for demo. Error: " + e.getMessage());
-            return "{\"status\":true,\"message\":\"Transfer successful (MOCK)\"}";
+            throw new RuntimeException("Paystack releaseFunds failed: " + e.getMessage(), e);
         }
     }
 
@@ -129,8 +126,7 @@ public class EscrowService {
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
             return response.getBody();
         } catch (Exception e) {
-            System.out.println("Paystack refundBuyer failed. Mocking success for demo. Error: " + e.getMessage());
-            return "{\"status\":true,\"message\":\"Refund successful (MOCK)\"}";
+            throw new RuntimeException("Paystack refundBuyer failed: " + e.getMessage(), e);
         }
     }
 
@@ -158,8 +154,8 @@ public class EscrowService {
             }
             return null;
         } catch (Exception e) {
-            System.out.println("Paystack createTransferRecipient failed. Mocking success for demo. Error: " + e.getMessage());
-            return "RCP_mock_" + System.currentTimeMillis();
+            System.out.println("Paystack createTransferRecipient failed: " + e.getMessage());
+            return null;
         }
     }
 }

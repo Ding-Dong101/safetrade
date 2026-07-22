@@ -25,9 +25,9 @@ const request = async <T = any>(
 
     if (!response.ok) {
         console.error(`[API Error] ${method} ${path} - Status: ${response.status}`, data);
-        // Stored token expired or was rejected — drop the session so the app
-        // redirects to login instead of failing on every request.
-        if (response.status === 401 && token && !path.includes("/login")) {
+        // Stored token expired or was rejected (or cross-environment 403) — drop the session
+        // so the app redirects to login instead of failing on every request.
+        if ((response.status === 401 || response.status === 403) && token && !path.includes("/login")) {
             useAuthStore.getState().clearUser();
         }
         const error: any = new Error(data?.message ?? `Request failed (${response.status})`);
