@@ -108,3 +108,14 @@ export const buyerCollect = async (
     });
     return data;
 };
+
+// Stage 5b: buyer receives directly from rider using rider's drop-off code
+export const buyerConfirmRiderDelivery = async (
+    tradeId: string,
+    dropOffCode: string
+): Promise<Trade> => {
+    const { data } = await api.post<Trade>(`/trades/${tradeId}/buyer-confirm-rider`, {
+        dropOffCode,
+    });
+    return data;
+};

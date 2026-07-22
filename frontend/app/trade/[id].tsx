@@ -1,11 +1,12 @@
-import { View, Text, ScrollView, Alert } from "react-native";
+import { View, Text, ScrollView, Alert, TouchableOpacity } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { useTheme } from "@/hooks/useTheme";
 import { useTrades } from "@/hooks/useTrades";
-import { useRole } from "@/hooks/useRole";
-import { depositFunds, verifyPayment, sellerUpload } from "@/services/tradeService";
+import { useAuth } from "@/hooks/useAuth";
+import { depositFunds, verifyPayment, sellerUpload, buyerConfirmRiderDelivery } from "@/services/tradeService";
 import * as Linking from "expo-linking";
 import Button from "@/components/ui/Button";
 import { useEffect, useState } from "react";
@@ -16,6 +17,7 @@ import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { formatDateTime } from "@/utils/formatDate";
 import Card from "@/components/ui/Card";
+import Input from "@/components/ui/Input";
 import { getUserById } from "@/services/userService";
 
 export default function TradeDetails() {
@@ -23,8 +25,9 @@ export default function TradeDetails() {
     const insets = useSafeAreaInsets();
     const { colors, spacing } = useTheme();
     const { selectedTrade, isLoading, fetchTradeById } = useTrades();
-    const { activeRole } = useRole();
+    const { user } = useAuth();
     const [isActing, setIsActing] = useState(false);
+    const [riderCodeInput, setRiderCodeInput] = useState("");
     const [buyerName, setBuyerName] = useState<string>("");
     const [sellerName, setSellerName] = useState<string>("");
 
@@ -44,7 +47,8 @@ export default function TradeDetails() {
     }
 }, [selectedTrade?.buyerId, selectedTrade?.sellerId]);
 
-    
+    const isBuyer = user?.id === selectedTrade?.buyerId;
+    const isSeller = user?.id === selectedTrade?.sellerId;
 
     const handleDeposit = async () => {
     if (!selectedTrade) return;
@@ -73,6 +77,24 @@ const handleVerifyPayment = async () => {
         setIsActing(true);
         await verifyPayment(selectedTrade.id);
         Alert.alert("Escrow Funded", "Payment verified. The seller has been notified.");
+        await fetchTradeById(selectedTrade.id);
+    } catch (err: any) {
+        Alert.alert("Verification Failed", err?.response?.data ?? err?.message ?? "Please try again.");
+    } finally {
+        setIsActing(false);
+    }
+};
+
+const handleConfirmRiderDelivery = async () => {
+    if (!selectedTrade) return;
+    if (!riderCodeInput || riderCodeInput.length < 5) {
+        Alert.alert("Invalid Code", "Please enter the valid delivery code provided by the rider.");
+        return;
+    }
+    try {
+        setIsActing(true);
+        await buyerConfirmRiderDelivery(selectedTrade.id, riderCodeInput);
+        Alert.alert("Receipt Confirmed", "You have successfully received the item. Funds are now released to the seller.");
         await fetchTradeById(selectedTrade.id);
     } catch (err: any) {
         Alert.alert("Verification Failed", err?.response?.data ?? err?.message ?? "Please try again.");
@@ -236,7 +258,7 @@ const handleVerifyPayment = async () => {
                 </Card>
 
                 {/* Next action for the current role */}
-                {activeRole === "buyer" &&
+                {isBuyer &&
     (selectedTrade.status === "CREATED" ||
         selectedTrade.status === "PENDING") && (
         <>
@@ -253,7 +275,7 @@ const handleVerifyPayment = async () => {
             />
         </>
     )}
-                {activeRole === "seller" && selectedTrade.status === "FUNDED" && (
+                {isSeller && selectedTrade.status === "FUNDED" && (
                     <Button
                         label="Take Item Photo to Get Dispatch Code"
                         onPress={handleSellerUpload}
@@ -261,20 +283,52 @@ const handleVerifyPayment = async () => {
                     />
                 )}
 
-                {activeRole === "seller" &&
+                {isSeller &&
                     selectedTrade.status === "DISPATCH_PENDING" &&
                     selectedTrade.dispatchCode && (
                         <Card>
-                            <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
-                                Dispatch Code (share with the rider)
-                            </Text>
-                            <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "800" }}>
-                                {selectedTrade.dispatchCode}
-                            </Text>
+                            <TouchableOpacity
+                                onPress={async () => {
+                                    if (selectedTrade.dispatchCode) {
+                                        await Clipboard.setStringAsync(selectedTrade.dispatchCode);
+                                        Alert.alert("Copied", "Dispatch Code copied to clipboard!");
+                                    }
+                                }}
+                            >
+                                <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
+                                    Dispatch Code (share with the rider - tap to copy)
+                                </Text>
+                                <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "800" }}>
+                                    {selectedTrade.dispatchCode}
+                                </Text>
+                            </TouchableOpacity>
                         </Card>
                     )}
 
-                {activeRole === "buyer" &&
+                {isBuyer &&
+                    selectedTrade.status === "IN_TRANSIT" && (
+                        <Card style={{ gap: spacing[3] }}>
+                            <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "600" }}>
+                                Direct Delivery
+                            </Text>
+                            <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
+                                Enter the delivery code provided by the rider to confirm you have received the item.
+                            </Text>
+                            <Input
+                                placeholder="Enter rider's delivery code"
+                                value={riderCodeInput}
+                                onChangeText={setRiderCodeInput}
+                                autoCapitalize="none"
+                            />
+                            <Button
+                                label="Confirm Receipt"
+                                onPress={handleConfirmRiderDelivery}
+                                isLoading={isActing}
+                            />
+                        </Card>
+                    )}
+
+                {isBuyer &&
                     selectedTrade.status === "AT_POST" &&
                     selectedTrade.releaseCode && (
                         <Card>

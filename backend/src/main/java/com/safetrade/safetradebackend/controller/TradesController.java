@@ -327,6 +327,54 @@ public class TradesController {
 
         trade.setStatus(TradeStatus.RELEASED);
         Trades saved = tradesRepository.save(trade);
+        
+        if (sellerOpt.isPresent()) {
+            Users seller = sellerOpt.get();
+            seller.setBalance((seller.getBalance() == null ? 0.0 : seller.getBalance()) + trade.getPrice());
+            usersRepository.save(seller);
+        }
+        
+        return ResponseEntity.ok(saved);
+    }
+
+    @PostMapping("/{id}/buyer-confirm-rider")
+    public ResponseEntity<?> buyerConfirmRider(@PathVariable UUID id, @RequestBody PostDropoffRequest request) {
+        Optional<Trades> optionalTrade = tradesRepository.findById(id);
+        if (optionalTrade.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Trades trade = optionalTrade.get();
+        if (trade.getStatus() != TradeStatus.IN_TRANSIT) {
+            return ResponseEntity.badRequest().body("Trade is not in transit with a rider");
+        }
+
+        if (trade.getDropOffCode() == null || !trade.getDropOffCode().equalsIgnoreCase(request.getDropOffCode())) {
+            return ResponseEntity.badRequest().body("Invalid rider delivery code");
+        }
+
+        Optional<Users> sellerOpt = usersRepository.findById(java.util.Objects.requireNonNull(UUID.fromString(trade.getSellerId())));
+        String recipientCode = sellerOpt.map(Users::getPaystackRecipientCode).orElse(null);
+        if (recipientCode == null || recipientCode.isEmpty()) {
+            return ResponseEntity.badRequest().body("Seller has not set up bank details for payout");
+        }
+        String escrowResponse = escrowService.releaseFunds(trade.getId(), recipientCode, trade.getPrice());
+        if (escrowResponse == null) {
+            return ResponseEntity.internalServerError().body("Escrow release failed or Escrow service is down");
+        }
+
+        trade.setStatus(TradeStatus.RELEASED);
+        Trades saved = tradesRepository.save(trade);
+        
+        if (sellerOpt.isPresent()) {
+            Users seller = sellerOpt.get();
+            seller.setBalance((seller.getBalance() == null ? 0.0 : seller.getBalance()) + trade.getPrice());
+            usersRepository.save(seller);
+        }
+        
+        sendNotification(trade.getBuyerId(), "RELEASED", "You have confirmed receipt. Funds have been released to the seller.");
+        sendNotification(trade.getSellerId(), "RELEASED", "Buyer has confirmed receipt. Funds have been released to your account.");
+
         return ResponseEntity.ok(saved);
     }
 

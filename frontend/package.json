@@ -44,6 +44,7 @@
   "devDependencies": {
     "@babel/plugin-transform-template-literals": "^7.25.9",
     "@types/react": "~19.1.10",
+    "@types/sockjs-client": "^1.5.4",
     "babel-plugin-transform-import-meta": "^2.3.3",
     "babel-preset-expo": "~54.0.10",
     "typescript": "~5.9.2"

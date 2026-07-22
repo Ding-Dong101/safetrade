@@ -32,5 +32,8 @@ public class AuthResponse {
         private boolean isAdmin;
         private String createdAt;
         private Double balance;
+        private String paymentName;
+        private String paymentNumber;
+        private String paymentNetwork;
     }
 }

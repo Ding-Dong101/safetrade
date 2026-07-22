@@ -146,8 +146,13 @@ public class UsersController {
         for (Users user : usersRepository.findAll()) {
             if (user.getUsername().equals(principal.getName())) {
                 user.setPaystackRecipientCode(recipientCode);
+                user.setPaymentName(name);
+                user.setPaymentNumber(accountNumber);
+                user.setPaymentNetwork(bankCode);
                 usersRepository.save(user);
-                return ResponseEntity.ok(java.util.Map.of("message", "Bank details updated successfully", "recipientCode", recipientCode));
+                
+                AuthResponse.UserDto userDto = buildAuthResponse(user).getUser();
+                return ResponseEntity.ok(java.util.Map.of("message", "Bank details updated successfully", "recipientCode", recipientCode, "user", userDto));
             }
         }
         return ResponseEntity.notFound().build();
@@ -170,6 +175,9 @@ public class UsersController {
                 .email(user.getEmail())
                 .isAdmin(false)
                 .balance(user.getBalance())
+                .paymentName(user.getPaymentName())
+                .paymentNumber(user.getPaymentNumber())
+                .paymentNetwork(user.getPaymentNetwork())
                 .createdAt(java.time.LocalDateTime.now().toString())
                 .build();
 

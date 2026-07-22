@@ -93,7 +93,7 @@ export default function RiderDropoff() {
                 <Card style={{ gap: spacing[2] }}>
                     <Text style={{ color: colors.muted, fontSize: 13 }}>Trade ID (for your records)</Text>
                     <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "500" }}>
-                        {trade.id}
+                        {(trade.title ?? "TRD").substring(0, 3).toUpperCase()}-{trade.id.substring(0, 8).toUpperCase()}
                     </Text>
                 </Card>
 

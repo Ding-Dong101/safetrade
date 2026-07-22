@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, ScrollView, Switch, TouchableOpacity, Alert, Platform, Modal, TextInput, KeyboardAvoidingView, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -61,10 +61,16 @@ const SettingsScreen = () => {
         [user?.firstName, user?.lastName].filter(Boolean).join(" ") || user?.username;
 
     const [isBankModalVisible, setBankModalVisible] = useState(false);
-    const [sellerName, setSellerName] = useState("");
-    const [phoneNumber, setPhoneNumber] = useState("");
-    const [network, setNetwork] = useState("MTN"); // MTN or VOD (Telecel)
+    const [sellerName, setSellerName] = useState(user?.paymentName || "");
+    const [phoneNumber, setPhoneNumber] = useState(user?.paymentNumber || "");
+    const [network, setNetwork] = useState(user?.paymentNetwork || "MTN"); // MTN or VOD (Telecel)
     const [isSavingBank, setIsSavingBank] = useState(false);
+
+    useEffect(() => {
+        setSellerName(user?.paymentName || "");
+        setPhoneNumber(user?.paymentNumber || "");
+        setNetwork(user?.paymentNetwork || "MTN");
+    }, [user]);
 
     const handleSaveBankDetails = async () => {
         if (!sellerName || !phoneNumber) {
@@ -73,11 +79,14 @@ const SettingsScreen = () => {
         }
         setIsSavingBank(true);
         try {
-            await updateBankDetails({
+            const response = await updateBankDetails({
                 name: sellerName,
                 accountNumber: phoneNumber,
                 bankCode: network,
             });
+            if (token && response.user) {
+                setUser(response.user, token);
+            }
             Toast.show({ type: "success", text1: "Payment details saved!" });
             setBankModalVisible(false);
         } catch (error: any) {

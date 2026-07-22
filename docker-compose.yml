@@ -29,7 +29,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "8081:8081"
+      - "8082:8081"
     environment:
      - EXPO_PACKAGER_PROXY_URL=http://localhost:8081
     volumes:
