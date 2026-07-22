@@ -381,7 +381,7 @@ public class TradesController {
 
     @GetMapping("/rider-code/{code}")
     public ResponseEntity<?> getTradeByRiderCode(@PathVariable String code) {
-        Optional<Trades> optionalTrade = tradesRepository.findByDispatchCode(code);
+        Optional<Trades> optionalTrade = tradesRepository.findByRiderCode(code);
         if (optionalTrade.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
