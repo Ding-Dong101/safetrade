@@ -12,6 +12,11 @@ interface DispatchCardProps {
 
 const DispatchCard = ({ job, onConfirm }: DispatchCardProps) => {
     const { colors, spacing } = useTheme();
+    const isUuid = (str?: string) => !!str && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}/.test(str.trim());
+    const displayTitle = (job.title && !isUuid(job.title))
+        ? job.title
+        : (job.buyerName && !isUuid(job.buyerName) ? job.buyerName : "Campus Item");
+
     return (
         <Card style={{ marginBottom: spacing[3] }}>
             <View
@@ -22,15 +27,22 @@ const DispatchCard = ({ job, onConfirm }: DispatchCardProps) => {
                     marginBottom: spacing[2],
                 }}
             >
-                <Text
-                    style={{
-                        color: colors.foreground,
-                        fontSize: 15,
-                        fontWeight: "600",
-                    }}
-                >
-                    {job.buyerName}
-                </Text>
+                <View style={{ flex: 1, paddingRight: spacing[2] }}>
+                    <Text
+                        style={{
+                            color: colors.foreground,
+                            fontSize: 16,
+                            fontWeight: "700",
+                            marginBottom: 3,
+                        }}
+                        numberOfLines={1}
+                    >
+                        {displayTitle}
+                    </Text>
+                    <Text style={{ color: colors.muted, fontSize: 12 }} numberOfLines={1}>
+                        Trade Code: {job.tradeCode ?? job.id}
+                    </Text>
+                </View>
                 <Badge label="Pending Dispatch" variant="warning" />
             </View>
 

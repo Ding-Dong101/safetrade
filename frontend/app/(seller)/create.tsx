@@ -28,6 +28,7 @@ export default function CreateTrade() {
     const { refetch } = useTrades();
 
     const [title, setTitle] = useState("");
+    const [pickupLocation, setPickupLocation] = useState("");
     const [description, setDescription] = useState("");
     const [price, setPrice] = useState("");
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -54,6 +55,7 @@ export default function CreateTrade() {
             setIsSubmitting(true);
             const result = await createTrade({
                 title: title.trim(),
+                pickupLocation: pickupLocation.trim() || undefined,
                 description: description.trim() || undefined,
                 price: parsedPrice,
                 sellerId: user.id,
@@ -73,6 +75,7 @@ export default function CreateTrade() {
 
     const handleReset = () => {
         setTitle("");
+        setPickupLocation("");
         setDescription("");
         setPrice("");
         setTradeCode(null);
@@ -261,6 +264,12 @@ export default function CreateTrade() {
                             onChangeText={setTitle}
                             placeholder="e.g. HP Envy"
                             error={errors.title}
+                        />
+                        <Input
+                            label="Pickup Location"
+                            value={pickupLocation}
+                            onChangeText={setPickupLocation}
+                            placeholder="e.g. Hall 7, Room 204"
                         />
                         <Input
                             label="Description"

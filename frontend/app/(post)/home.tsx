@@ -32,13 +32,10 @@ const ParcelCard = ({ trade, onVerify }: ParcelCardProps) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const isDropOff = trade.status === "IN_TRANSIT";
-    const accent = isDropOff ? colors.accent : colors.primary;
-    const codeLabel = isDropOff ? "Drop-Off Code" : "Pick-Up Code";
-    const statusLabel = isDropOff ? "Pending Drop-Off" : "Awaiting Buyer Collection";
 
     const handleVerify = async () => {
         if (code.trim().length < 4) {
-            Alert.alert("Invalid Code", `Enter the ${codeLabel.toLowerCase()} to verify.`);
+            Alert.alert("Invalid Code", "Enter the pick-up code to verify.");
             return;
         }
         try {
@@ -51,75 +48,129 @@ const ParcelCard = ({ trade, onVerify }: ParcelCardProps) => {
 
     return (
         <Card style={{ marginBottom: spacing[3] }}>
-            <View
-                style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                }}
-            >
-                <View style={{ flex: 1 }}>
-                    <Text
-                        style={{
-                            color: colors.foreground,
-                            fontSize: 15,
-                            fontWeight: "600",
-                            marginBottom: 4,
-                        }}
-                    >
-                        {trade.title ?? "Parcel"}
-                    </Text>
-                    <Text style={{ color: colors.muted, fontSize: 12 }} numberOfLines={1}>
-                        ID: {trade.id}
-                    </Text>
-                </View>
-
-                <View style={{ alignItems: "flex-end", gap: 6 }}>
-                    <TextInput
-                        value={code}
-                        onChangeText={(value) => setCode(value.toUpperCase())}
-                        placeholder={codeLabel}
-                        placeholderTextColor={accent}
-                        autoCapitalize="characters"
-                        autoCorrect={false}
-                        onSubmitEditing={handleVerify}
-                        style={{
-                            borderWidth: 1.5,
-                            borderColor: accent,
-                            borderRadius: 8,
-                            paddingVertical: 6,
-                            paddingHorizontal: 12,
-                            color: colors.foreground,
-                            fontSize: 13,
-                            fontWeight: "600",
-                            minWidth: 140,
-                            textAlign: "center",
-                        }}
-                    />
-                    <Text
-                        style={{
-                            color: accent,
-                            fontSize: 11,
-                            fontWeight: "600",
-                        }}
-                    >
-                        {statusLabel}
-                    </Text>
-                </View>
+            {/* Product name + Trade Code header */}
+            <View style={{ marginBottom: spacing[3] }}>
+                <Text
+                    style={{
+                        color: colors.foreground,
+                        fontSize: 16,
+                        fontWeight: "700",
+                        marginBottom: 3,
+                    }}
+                    numberOfLines={1}
+                >
+                    {trade.title && trade.title.trim() ? trade.title : "Untitled Product"}
+                </Text>
+                <Text style={{ color: colors.muted, fontSize: 12 }} numberOfLines={1}>
+                    Trade Code: {trade.tradeCode ?? trade.id}
+                </Text>
             </View>
 
-            {code.trim().length > 0 && (
-                <Button
-                    label="Verify Code"
-                    onPress={handleVerify}
-                    isLoading={isSubmitting}
-                    variant={isDropOff ? "warning" : "primary"}
-                    style={{
-                        marginTop: spacing[3],
-                        paddingVertical: 8,
-                        alignSelf: "flex-end",
-                    }}
-                />
+            {isDropOff ? (
+                /* ── IN_TRANSIT: Show the generated Drop-Off Code for the rider ── */
+                <View>
+                    <Text
+                        style={{
+                            color: colors.muted,
+                            fontSize: 11,
+                            fontWeight: "600",
+                            textTransform: "uppercase",
+                            letterSpacing: 0.8,
+                            marginBottom: spacing[2],
+                        }}
+                    >
+                        Drop-Off Code — give to rider
+                    </Text>
+                    <View
+                        style={{
+                            backgroundColor: colors.accent + "22",
+                            borderWidth: 1.5,
+                            borderColor: colors.accent,
+                            borderRadius: 10,
+                            paddingVertical: spacing[3],
+                            paddingHorizontal: spacing[4],
+                            alignItems: "center",
+                        }}
+                    >
+                        <Text
+                            style={{
+                                color: colors.accent,
+                                fontSize: 22,
+                                fontWeight: "800",
+                                letterSpacing: 2,
+                                fontVariant: ["tabular-nums"],
+                            }}
+                            selectable
+                        >
+                            {trade.dropOffCode ?? "Generating…"}
+                        </Text>
+                    </View>
+                    <Text
+                        style={{
+                            color: colors.muted,
+                            fontSize: 11,
+                            marginTop: spacing[2],
+                            textAlign: "center",
+                        }}
+                    >
+                        The rider enters this code in the Rider Portal to confirm receipt.
+                    </Text>
+                </View>
+            ) : (
+                /* ── AT_POST: Enter the Buyer's Pick-Up Code ── */
+                <View>
+                    <Text
+                        style={{
+                            color: colors.muted,
+                            fontSize: 11,
+                            fontWeight: "600",
+                            textTransform: "uppercase",
+                            letterSpacing: 0.8,
+                            marginBottom: spacing[2],
+                        }}
+                    >
+                        Pick-Up Code — enter buyer's code
+                    </Text>
+                    <View style={{ flexDirection: "row", gap: spacing[2], alignItems: "center" }}>
+                        <TextInput
+                            value={code}
+                            onChangeText={(value) => setCode(value.toUpperCase())}
+                            placeholder="Enter Pick-Up Code"
+                            placeholderTextColor={colors.primary + "88"}
+                            autoCapitalize="characters"
+                            autoCorrect={false}
+                            onSubmitEditing={handleVerify}
+                            style={{
+                                flex: 1,
+                                borderWidth: 1.5,
+                                borderColor: colors.primary,
+                                borderRadius: 8,
+                                paddingVertical: 8,
+                                paddingHorizontal: 12,
+                                color: colors.foreground,
+                                fontSize: 14,
+                                fontWeight: "600",
+                                textAlign: "center",
+                            }}
+                        />
+                        <Button
+                            label="Confirm"
+                            onPress={handleVerify}
+                            isLoading={isSubmitting}
+                            variant="primary"
+                            style={{ paddingVertical: 9, paddingHorizontal: spacing[4] }}
+                        />
+                    </View>
+                    <Text
+                        style={{
+                            color: colors.muted,
+                            fontSize: 11,
+                            marginTop: spacing[2],
+                        }}
+                    >
+                        The buyer presents this code at the post office to collect their item.
+                    </Text>
+                </View>
             )}
         </Card>
     );

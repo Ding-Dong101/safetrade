@@ -8,6 +8,8 @@ export type JobStatus =
 export interface RiderJob {
     id: string;
     tradeId: string;
+    tradeCode?: string;
+    title?: string;
     buyerName: string;
     sellerName: string;
     pickupLocation: string;
@@ -15,6 +17,7 @@ export interface RiderJob {
     status: JobStatus;
     dispatchCode?: string;
     dropoffCode?: string;
+    directDeliveryCode?: string;
     assignedAt: string;
     deliveredAt?: string;
 }
@@ -22,6 +25,8 @@ export interface RiderJob {
 export interface AvailableJob {
     id: string;
     tradeId: string;
+    tradeCode?: string;
+    title?: string;
     buyerName: string;
     pickupLocation: string;
     dropoffLocation: string;

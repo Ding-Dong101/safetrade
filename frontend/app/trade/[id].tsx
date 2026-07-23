@@ -200,6 +200,10 @@ const handleVerifyPayment = async () => {
     value: formatDateTime(selectedTrade.createdAt),
 },
 {
+    label: "Pickup Location",
+    value: selectedTrade.pickupLocation || "—",
+},
+{
     label: "Trade Code",
     value: (selectedTrade as any).tradeCode ?? selectedTrade.id,
 },
@@ -275,13 +279,29 @@ const handleVerifyPayment = async () => {
                     )}
 
                 {activeRole === "buyer" &&
+                    selectedTrade.status === "IN_TRANSIT" &&
+                    selectedTrade.directDeliveryCode && (
+                        <Card>
+                            <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
+                                Direct Delivery Code — give to rider to complete trade immediately
+                            </Text>
+                            <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "800", letterSpacing: 2 }}>
+                                {selectedTrade.directDeliveryCode}
+                            </Text>
+                            <Text style={{ color: colors.muted, fontSize: 12, marginTop: spacing[1] }}>
+                                Alternatively, the rider can drop off at the post office using the post drop-off code.
+                            </Text>
+                        </Card>
+                    )}
+
+                {activeRole === "buyer" &&
                     selectedTrade.status === "AT_POST" &&
                     selectedTrade.releaseCode && (
                         <Card>
                             <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
-                                Pick-Up Code (show at the SafeTrade post)
+                                Pick-Up Code — show at the SafeTrade post office to collect
                             </Text>
-                            <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "800" }}>
+                            <Text style={{ color: colors.accent, fontSize: 24, fontWeight: "800", letterSpacing: 2 }}>
                                 {selectedTrade.releaseCode}
                             </Text>
                         </Card>

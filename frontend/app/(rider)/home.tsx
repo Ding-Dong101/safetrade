@@ -33,33 +33,58 @@ interface OngoingJobCardProps {
     onConfirmed: (jobId: string) => void;
 }
 
+const isUuidString = (str?: string) => !!str && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}/.test(str.trim());
+
+const getCleanTitle = (title?: string, fallbackName?: string) => {
+    if (title && title.trim().length > 0 && !isUuidString(title)) {
+        return title.trim();
+    }
+    if (fallbackName && fallbackName.trim().length > 0 && !isUuidString(fallbackName)) {
+        return fallbackName.trim();
+    }
+    return "Campus Parcel";
+};
+
 const OngoingJobCard = ({ job, onConfirmed }: OngoingJobCardProps) => {
     const { colors, spacing } = useTheme();
     const [code, setCode] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const isPickup = job.status === "pending_dispatch" || job.status === "accepted";
-    const label = isPickup ? "Enter Dispatch Code" : "Enter Drop-Off Code";
-    const location = isPickup ? job.pickupLocation : job.dropoffLocation;
+    const isInTransit = job.status === "in_transit";
+    const displayTitle = getCleanTitle(job.title, job.buyerName);
 
     const handleConfirm = async () => {
         if (code.trim().length < 4) {
-            Alert.alert("Invalid Code", `Please ${label.toLowerCase()} to continue.`);
+            Alert.alert("Invalid Code", "Please enter a valid code to continue.");
             return;
         }
-
         try {
             setIsSubmitting(true);
             if (isPickup) {
                 await confirmPickup(job.id, code);
-                Alert.alert("Pickup Confirmed", "You can now deliver the package to the post.");
+                Alert.alert("Pickup Confirmed", "You can now deliver the package.");
+                onConfirmed(job.id);
             } else {
-                await confirmDelivery(job.id, code);
-                Alert.alert("Delivery Confirmed", "The package has been dropped off.");
+                const result = await confirmDelivery(job.id, code);
+                if (result.status === "RELEASED") {
+                    Alert.alert(
+                        "✅ Trade Complete",
+                        "Direct delivery confirmed. Funds have been released to the seller."
+                    );
+                } else {
+                    Alert.alert(
+                        "📦 Package Received at Post",
+                        "The package has been logged at the post office. The buyer will collect it using their pick-up code."
+                    );
+                }
+                onConfirmed(job.id);
             }
-            onConfirmed(job.id);
         } catch (err: any) {
-            Alert.alert("Error", err?.message ?? "Failed to confirm code");
+            Alert.alert(
+                "Invalid Code",
+                err?.response?.data ?? err?.message ?? "The code did not match. Please try again."
+            );
         } finally {
             setIsSubmitting(false);
         }
@@ -67,6 +92,7 @@ const OngoingJobCard = ({ job, onConfirmed }: OngoingJobCardProps) => {
 
     return (
         <Card style={{ marginBottom: spacing[3] }}>
+            {/* Header */}
             <View
                 style={{
                     flexDirection: "row",
@@ -75,47 +101,154 @@ const OngoingJobCard = ({ job, onConfirmed }: OngoingJobCardProps) => {
                     marginBottom: spacing[2],
                 }}
             >
-                <Text
-                    style={{
-                        color: colors.foreground,
-                        fontSize: 15,
-                        fontWeight: "600",
-                    }}
-                >
-                    {job.buyerName}
-                </Text>
+                <View style={{ flex: 1, paddingRight: spacing[2] }}>
+                    <Text
+                        style={{
+                            color: colors.foreground,
+                            fontSize: 16,
+                            fontWeight: "700",
+                            marginBottom: 3,
+                        }}
+                        numberOfLines={1}
+                    >
+                        {displayTitle}
+                    </Text>
+                    <Text style={{ color: colors.muted, fontSize: 12 }} numberOfLines={1}>
+                        Trade Code: {job.tradeCode ?? job.id}
+                    </Text>
+                </View>
                 <Badge
-                    label={isPickup ? "Pending Dispatch" : "To Drop-Off"}
+                    label={isPickup ? "Pending Dispatch" : "In Transit"}
                     variant={isPickup ? "warning" : "primary"}
                 />
             </View>
 
-            <Text
-                style={{
-                    color: colors.muted,
-                    fontSize: 13,
-                    marginBottom: spacing[3],
-                }}
-            >
-                Loc: {location}
+            <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[3] }}>
+                {isPickup ? `Pick up from: ${job.pickupLocation}` : `Drop off to: ${job.dropoffLocation}`}
             </Text>
 
-            <Input
-                placeholder={label}
-                value={code}
-                onChangeText={(value) => setCode(value.toUpperCase())}
-                autoCapitalize="characters"
-                autoCorrect={false}
-                containerStyle={{ marginBottom: spacing[3] }}
-            />
+            {isInTransit ? (
+                /* ── Dual path section for IN_TRANSIT jobs ── */
+                <View style={{ gap: spacing[4] }}>
+                    {/* Option A: Buyer gives code directly */}
+                    <View>
+                        <View
+                            style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                gap: spacing[2],
+                                marginBottom: spacing[2],
+                            }}
+                        >
+                            <View
+                                style={{
+                                    backgroundColor: colors.primary + "22",
+                                    borderRadius: 12,
+                                    paddingHorizontal: spacing[2],
+                                    paddingVertical: 2,
+                                }}
+                            >
+                                <Text style={{ color: colors.primary, fontSize: 10, fontWeight: "700" }}>
+                                    PATH A
+                                </Text>
+                            </View>
+                            <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "600" }}>
+                                Direct Delivery to Buyer
+                            </Text>
+                        </View>
+                        <Text style={{ color: colors.muted, fontSize: 12, marginBottom: spacing[2] }}>
+                            The buyer gives you their Direct Delivery Code. Enter it below to complete the trade and release funds immediately.
+                        </Text>
+                        <Input
+                            placeholder="Enter Buyer's Delivery Code"
+                            value={code}
+                            onChangeText={(value) => setCode(value.toUpperCase())}
+                            autoCapitalize="characters"
+                            autoCorrect={false}
+                            containerStyle={{ marginBottom: spacing[2] }}
+                        />
+                        <Button
+                            label="Confirm Direct Delivery"
+                            variant="primary"
+                            onPress={handleConfirm}
+                            isLoading={isSubmitting}
+                            style={{ alignSelf: "stretch" }}
+                        />
+                    </View>
 
-            <Button
-                label="Enter"
-                variant={isPickup ? "warning" : "primary"}
-                onPress={handleConfirm}
-                isLoading={isSubmitting}
-                style={{ alignSelf: "flex-end", paddingHorizontal: 32 }}
-            />
+                    {/* Divider */}
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
+                        <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+                        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>OR</Text>
+                        <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+                    </View>
+
+                    {/* Option B: Post Office drop-off */}
+                    <View>
+                        <View
+                            style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                gap: spacing[2],
+                                marginBottom: spacing[2],
+                            }}
+                        >
+                            <View
+                                style={{
+                                    backgroundColor: colors.accent + "22",
+                                    borderRadius: 12,
+                                    paddingHorizontal: spacing[2],
+                                    paddingVertical: 2,
+                                }}
+                            >
+                                <Text style={{ color: colors.accent, fontSize: 10, fontWeight: "700" }}>
+                                    PATH B
+                                </Text>
+                            </View>
+                            <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "600" }}>
+                                Drop Off at Post Office
+                            </Text>
+                        </View>
+                        <Text style={{ color: colors.muted, fontSize: 12, marginBottom: spacing[2] }}>
+                            The post operator shows you the Drop-Off Code from their portal. Enter it below to confirm receipt at the post.
+                        </Text>
+                        <Input
+                            placeholder="Enter Post Drop-Off Code"
+                            value={code}
+                            onChangeText={(value) => setCode(value.toUpperCase())}
+                            autoCapitalize="characters"
+                            autoCorrect={false}
+                            containerStyle={{ marginBottom: spacing[2] }}
+                        />
+                        <Button
+                            label="Confirm Post Drop-Off"
+                            variant="warning"
+                            onPress={handleConfirm}
+                            isLoading={isSubmitting}
+                            style={{ alignSelf: "stretch" }}
+                        />
+                    </View>
+                </View>
+            ) : (
+                /* ── Standard dispatch code entry ── */
+                <View>
+                    <Input
+                        placeholder="Enter Dispatch Code"
+                        value={code}
+                        onChangeText={(value) => setCode(value.toUpperCase())}
+                        autoCapitalize="characters"
+                        autoCorrect={false}
+                        containerStyle={{ marginBottom: spacing[3] }}
+                    />
+                    <Button
+                        label="Confirm Pickup"
+                        variant="warning"
+                        onPress={handleConfirm}
+                        isLoading={isSubmitting}
+                        style={{ alignSelf: "flex-end", paddingHorizontal: 32 }}
+                    />
+                </View>
+            )}
         </Card>
     );
 };
@@ -128,6 +261,7 @@ interface AvailableJobRowProps {
 
 const AvailableJobRow = ({ job, onAccept, onIgnore }: AvailableJobRowProps) => {
     const { colors, spacing } = useTheme();
+    const displayTitle = getCleanTitle(job.title, job.buyerName);
 
     return (
         <Card style={{ marginBottom: spacing[3] }}>
@@ -138,16 +272,20 @@ const AvailableJobRow = ({ job, onAccept, onIgnore }: AvailableJobRowProps) => {
                     alignItems: "center",
                 }}
             >
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, paddingRight: spacing[2] }}>
                     <Text
                         style={{
                             color: colors.foreground,
-                            fontSize: 15,
-                            fontWeight: "600",
-                            marginBottom: 4,
+                            fontSize: 16,
+                            fontWeight: "700",
+                            marginBottom: 3,
                         }}
+                        numberOfLines={1}
                     >
-                        {job.buyerName}
+                        {displayTitle}
+                    </Text>
+                    <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 4 }} numberOfLines={1}>
+                        Trade Code: {job.tradeCode ?? job.id}
                     </Text>
                     <Text style={{ color: colors.muted, fontSize: 13 }}>
                         Loc: {job.pickupLocation}

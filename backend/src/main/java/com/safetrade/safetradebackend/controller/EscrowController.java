@@ -139,8 +139,9 @@ public class EscrowController {
     }
 
     private void sendNotification(String userId, String type, String message) {
+        if (userId == null || userId.isBlank()) return;
         try {
-            Optional<com.safetrade.safetradebackend.model.Users> user = usersRepository.findById(java.util.Objects.requireNonNull(UUID.fromString(userId)));
+            Optional<com.safetrade.safetradebackend.model.Users> user = usersRepository.findById(UUID.fromString(userId));
             if(user.isPresent() && user.get().getPushToken() != null) {
                 notificationService.sendPushNotification(user.get().getPushToken(), type, message);
             }

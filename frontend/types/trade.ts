@@ -12,6 +12,9 @@ export type TradeStatus =
 
 export interface Trade {
     id: string;
+    tradeCode?: string;
+    riderCode?: string;
+    pickupLocation?: string;
     buyerId: string;
     sellerId: string;
     price: number;
@@ -20,6 +23,7 @@ export interface Trade {
     description?: string;
     dispatchCode?: string;
     dropOffCode?: string;
+    directDeliveryCode?: string;
     releaseCode?: string;
     riderId?: string;
     itemPhotoBase64?: string;
@@ -31,6 +35,7 @@ export interface Trade {
 export interface CreateTradePayload {
     title: string;
     description?: string;
+    pickupLocation?: string;
     price: number;
     sellerId: string;
 }

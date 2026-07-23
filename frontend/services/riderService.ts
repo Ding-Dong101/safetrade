@@ -24,13 +24,16 @@ const toJobStatus = (trade: Trade): JobStatus => {
 const toRiderJob = (trade: Trade): RiderJob => ({
     id: trade.id,
     tradeId: trade.id,
+    tradeCode: trade.tradeCode,
+    title: trade.title,
     buyerName: trade.buyerId,
     sellerName: trade.sellerId,
-    pickupLocation: "Seller location",
+    pickupLocation: trade.pickupLocation || "Seller location",
     dropoffLocation: "SafeTrade Post",
     status: toJobStatus(trade),
     dispatchCode: trade.dispatchCode,
     dropoffCode: trade.dropOffCode,
+    directDeliveryCode: trade.directDeliveryCode,
     assignedAt: trade.riderPickedUpAt ?? trade.createdAt,
 });
 
@@ -51,8 +54,10 @@ export const getAvailableJobs = async (): Promise<AvailableJob[]> => {
         .map((trade) => ({
             id: trade.id,
             tradeId: trade.id,
+            tradeCode: trade.tradeCode,
+            title: trade.title,
             buyerName: trade.buyerId,
-            pickupLocation: "Seller location",
+            pickupLocation: trade.pickupLocation || "Seller location",
             dropoffLocation: "SafeTrade Post",
         }));
 };
@@ -78,14 +83,17 @@ export const confirmPickup = async (
     return { jobId };
 };
 
+// confirmDelivery accepts either the Post Drop-Off code or the Direct Delivery code.
+// The backend validates both and routes to the correct fulfillment path automatically.
 export const confirmDelivery = async (
     jobId: string,
-    dropoffCode: string
-): Promise<{ jobId: string }> => {
-    await api.post(`/trades/${jobId}/post-dropoff`, {
-        dropOffCode: dropoffCode.trim(),
+    code: string
+): Promise<{ jobId: string; status: string }> => {
+    const { data } = await api.post<Trade>(`/trades/${jobId}/post-dropoff`, {
+        dropOffCode: code.trim(),
+        code: code.trim(),
     });
-    return { jobId };
+    return { jobId, status: data.status };
 };
 
 export const updateRiderLocation = async (

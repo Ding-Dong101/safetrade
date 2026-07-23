@@ -32,8 +32,9 @@ public class TradesController {
     }
 
     private void sendNotification(String userId, String type, String message) {
+        if (userId == null || userId.isBlank()) return;
         try {
-            Optional<Users> user = usersRepository.findById(java.util.Objects.requireNonNull(UUID.fromString(userId)));
+            Optional<Users> user = usersRepository.findById(UUID.fromString(userId));
             if(user.isPresent() && user.get().getPushToken() != null) {
                 notificationService.sendPushNotification(user.get().getPushToken(), type, message);
             }
@@ -98,6 +99,7 @@ public class TradesController {
         Trades trade = Trades.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
+                .pickupLocation(request.getPickupLocation())
                 .price(request.getPrice())
                 .buyerId(buyerId)
                 .sellerId(request.getSellerId())
@@ -261,6 +263,7 @@ public class TradesController {
         trade.setRiderId(request.getRiderId());
         trade.setRiderPickedUpAt(LocalDateTime.now());
         trade.setDropOffCode(generateCode());
+        trade.setDirectDeliveryCode(generateCode());
         trade.setStatus(TradeStatus.IN_TRANSIT);
 
         Trades saved = tradesRepository.save(trade);
@@ -283,20 +286,31 @@ public class TradesController {
             return ResponseEntity.badRequest().body("Trade is not in transit");
         }
 
-        if (trade.getDropOffCode() == null || !trade.getDropOffCode().equalsIgnoreCase(request.getDropOffCode())) {
-            return ResponseEntity.badRequest().body("Invalid drop-off verification code");
+        String inputCode = request.getDropOffCode() != null ? request.getDropOffCode().trim() : (request.getCode() != null ? request.getCode().trim() : "");
+        if (inputCode.isEmpty()) {
+            return ResponseEntity.badRequest().body("Verification code is required");
         }
 
-        trade.setPostArrivedAt(LocalDateTime.now());
-        trade.setReleaseCode(generateCode());
-        trade.setStatus(TradeStatus.AT_POST);
+        // PATH 1: Direct Buyer Delivery Code
+        if (trade.getDirectDeliveryCode() != null && trade.getDirectDeliveryCode().equalsIgnoreCase(inputCode)) {
+            return completeTradeAndReleaseFunds(trade, "Rider confirmed direct delivery using buyer code.");
+        }
 
-        Trades saved = tradesRepository.save(trade);
+        // PATH 2: Post Office Drop-Off Code
+        if (trade.getDropOffCode() != null && trade.getDropOffCode().equalsIgnoreCase(inputCode)) {
+            trade.setPostArrivedAt(LocalDateTime.now());
+            trade.setReleaseCode(generateCode());
+            trade.setStatus(TradeStatus.AT_POST);
 
-        sendNotification(trade.getBuyerId(), "AT_POST", "Your item has arrived at the SafeTrade post. Please collect it using your release code.");
-        sendNotification(trade.getSellerId(), "AT_POST", "Item has successfully reached the SafeTrade post.");
+            Trades saved = tradesRepository.save(trade);
 
-        return ResponseEntity.ok(saved);
+            sendNotification(trade.getBuyerId(), "AT_POST", "Your item has arrived at the SafeTrade post. Please collect it using your release code.");
+            sendNotification(trade.getSellerId(), "AT_POST", "Item has successfully reached the SafeTrade post.");
+
+            return ResponseEntity.ok(saved);
+        }
+
+        return ResponseEntity.badRequest().body("Invalid verification code");
     }
 
     @PostMapping("/{id}/buyer-collect")
@@ -315,19 +329,7 @@ public class TradesController {
             return ResponseEntity.badRequest().body("Invalid buyer release code");
         }
 
-        Optional<Users> sellerOpt = usersRepository.findById(java.util.Objects.requireNonNull(UUID.fromString(trade.getSellerId())));
-        String recipientCode = sellerOpt.map(Users::getPaystackRecipientCode).orElse(null);
-        if (recipientCode == null || recipientCode.isEmpty()) {
-            return ResponseEntity.badRequest().body("Seller has not set up bank details for payout");
-        }
-        String escrowResponse = escrowService.releaseFunds(trade.getId(), recipientCode, trade.getPrice());
-        if (escrowResponse == null) {
-            return ResponseEntity.internalServerError().body("Escrow release failed or Escrow service is down");
-        }
-
-        trade.setStatus(TradeStatus.RELEASED);
-        Trades saved = tradesRepository.save(trade);
-        return ResponseEntity.ok(saved);
+        return completeTradeAndReleaseFunds(trade, "Item collected by buyer from post office.");
     }
 
     @GetMapping("/rider-code/{code}")
@@ -351,6 +353,8 @@ public class TradesController {
         }
         trade.setRiderId(request.getRiderId());
         trade.setRiderPickedUpAt(LocalDateTime.now());
+        trade.setDropOffCode(generateCode());
+        trade.setDirectDeliveryCode(generateCode());
         trade.setStatus(TradeStatus.IN_TRANSIT);
         Trades saved = tradesRepository.save(trade);
 
@@ -370,26 +374,42 @@ public class TradesController {
         if (trade.getStatus() != TradeStatus.IN_TRANSIT) {
             return ResponseEntity.badRequest().body("Trade is not in transit");
         }
-        if (request.getTradeId() == null || !request.getTradeId().equalsIgnoreCase(trade.getId().toString())) {
-            return ResponseEntity.badRequest().body("Invalid Trade ID confirmation");
+
+        String inputCode = request.getTradeId() != null ? request.getTradeId().trim() : "";
+        if (trade.getDirectDeliveryCode() != null && trade.getDirectDeliveryCode().equalsIgnoreCase(inputCode)) {
+            return completeTradeAndReleaseFunds(trade, "Rider confirmed direct delivery.");
+        }
+        if (inputCode.equalsIgnoreCase(trade.getId().toString())) {
+            return completeTradeAndReleaseFunds(trade, "Rider confirmed direct delivery.");
         }
 
-        // Trigger automatic escrow release to seller
-        Optional<Users> sellerOpt = usersRepository.findById(java.util.Objects.requireNonNull(UUID.fromString(trade.getSellerId())));
-        String recipientCode = sellerOpt.map(Users::getPaystackRecipientCode).orElse(null);
-        if (recipientCode == null || recipientCode.isEmpty()) {
-            return ResponseEntity.badRequest().body("Seller has not set up bank details for payout");
-        }
-        String escrowResponse = escrowService.releaseFunds(trade.getId(), recipientCode, trade.getPrice());
-        if (escrowResponse == null) {
-            return ResponseEntity.internalServerError().body("Escrow release failed or Escrow service is down");
+        return ResponseEntity.badRequest().body("Invalid confirmation code");
+    }
+
+    private ResponseEntity<?> completeTradeAndReleaseFunds(Trades trade, String logContext) {
+        // Credit seller balance in DB
+        try {
+            Optional<Users> sellerOpt = usersRepository.findById(UUID.fromString(trade.getSellerId()));
+            if (sellerOpt.isPresent()) {
+                Users seller = sellerOpt.get();
+                Double currentBalance = seller.getBalance() == null ? 0.0 : seller.getBalance();
+                seller.setBalance(currentBalance + trade.getPrice());
+                usersRepository.save(seller);
+
+                String recipientCode = seller.getPaystackRecipientCode();
+                if (recipientCode != null && !recipientCode.isEmpty()) {
+                    escrowService.releaseFunds(trade.getId(), recipientCode, trade.getPrice());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Could not update seller balance: " + e.getMessage());
         }
 
         trade.setStatus(TradeStatus.RELEASED);
         Trades saved = tradesRepository.save(trade);
 
-        sendNotification(trade.getBuyerId(), "RELEASED", "Rider has confirmed direct delivery and funds are released.");
-        sendNotification(trade.getSellerId(), "RELEASED", "Delivery confirmed by rider. Funds have been released to your account.");
+        sendNotification(trade.getBuyerId(), "RELEASED", "Delivery confirmed and trade completed.");
+        sendNotification(trade.getSellerId(), "RELEASED", "Funds have been credited to your balance.");
 
         return ResponseEntity.ok(saved);
     }
@@ -429,6 +449,7 @@ public class TradesController {
     @Data
     public static class PostDropoffRequest {
         private String dropOffCode;
+        private String code;
     }
 
     @Data
