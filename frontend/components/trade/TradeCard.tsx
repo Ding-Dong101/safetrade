@@ -1,5 +1,7 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Alert, Linking } from "react-native";
 import * as Clipboard from 'expo-clipboard';
+import { Ionicons } from "@expo/vector-icons";
+import Toast from "react-native-toast-message";
 import Card from "@/components/ui/Card";
 import TradeStatusBadge from "./TradeStatusBadge";
 import TradeStatusBar from "./TradeStatusBar";
@@ -10,7 +12,6 @@ import { Role } from "@/types/auth";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useState } from "react";
-import { Alert, Linking } from "react-native";
 import { depositFunds, buyerConfirmRiderDelivery } from "@/services/tradeService";
 
 interface TradeCardProps {
@@ -88,19 +89,6 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
                 <TradeStatusBadge status={trade.status} />
             </View>
 
-            {trade.pickupLocation && (
-                <Text
-                    style={{
-                        color: colors.muted,
-                        fontSize: 12,
-                        marginBottom: spacing[1],
-                    }}
-                    numberOfLines={1}
-                >
-                    Pickup Location: {trade.pickupLocation}
-                </Text>
-            )}
-
             <View
                 style={{
                     flexDirection: "row",
@@ -109,17 +97,28 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
                     marginBottom: spacing[2],
                 }}
             >
-                <Text
-                    style={{
-                        color: colors.muted,
-                        fontSize: 12,
-                        flex: 1,
-                        marginRight: spacing[2],
+                <TouchableOpacity
+                    onPress={async () => {
+                        const codeToCopy = trade.tradeCode ?? trade.id;
+                        await Clipboard.setStringAsync(codeToCopy);
+                        Toast.show({ type: "info", text1: "Copied", text2: `Trade Code (${codeToCopy}) copied!` });
                     }}
-                    numberOfLines={1}
+                    activeOpacity={0.7}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 4, flex: 1, marginRight: spacing[2] }}
                 >
-                    Trade Code: {trade.tradeCode ?? trade.id}
-                </Text>
+                    <Text
+                        style={{
+                            color: colors.muted,
+                            fontSize: 12,
+                            fontWeight: "400",
+                        }}
+                        numberOfLines={1}
+                    >
+                        Trade Code: {trade.tradeCode ?? trade.id}
+                    </Text>
+                    <Ionicons name="copy-outline" size={13} color={colors.muted} />
+                </TouchableOpacity>
+
                 <Text
                     style={{
                         color: colors.foreground,
@@ -131,6 +130,20 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
                     {formatCurrency(trade.price)}
                 </Text>
             </View>
+
+            {trade.pickupLocation && (
+                <Text
+                    style={{
+                        color: colors.muted,
+                        fontSize: 12,
+                        fontWeight: "400",
+                        marginBottom: spacing[1],
+                    }}
+                    numberOfLines={1}
+                >
+                    Pickup Location: {trade.pickupLocation}
+                </Text>
+            )}
 
             {showDirectDeliveryCode && (
                 <View
@@ -159,7 +172,7 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
                         {trade.directDeliveryCode}
                     </Text>
                     <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>
-                        Or let the rider drop off at the post — see post portal for drop-off code.
+                        Or let the rider drop off at the post office station.
                     </Text>
                 </View>
             )}
@@ -196,51 +209,38 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
                 </View>
             )}
 
+            {/* Secondary Codes List — Clean Grey Subsection Styling with Copy Symbol */}
+            {role === "seller" && trade.riderCode && (
+                <TouchableOpacity
+                    onPress={async () => {
+                        await Clipboard.setStringAsync(trade.riderCode!);
+                        Toast.show({ type: "info", text1: "Copied", text2: `Rider Code (${trade.riderCode}) copied!` });
+                    }}
+                    activeOpacity={0.7}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: spacing[1] }}
+                >
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "400" }}>
+                        Rider Code: {trade.riderCode}
+                    </Text>
+                    <Ionicons name="copy-outline" size={13} color={colors.muted} />
+                </TouchableOpacity>
+            )}
+
             {showDispatchCode && (
                 <TouchableOpacity
                     onPress={async () => {
                         if (trade.dispatchCode) {
                             await Clipboard.setStringAsync(trade.dispatchCode);
-                            Alert.alert("Copied", "Dispatch Code copied to clipboard!");
+                            Toast.show({ type: "info", text1: "Copied", text2: `Dispatch Code (${trade.dispatchCode}) copied!` });
                         }
                     }}
+                    activeOpacity={0.7}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: spacing[1] }}
                 >
-                    <Text
-                        style={{
-                            color: colors.foreground,
-                            fontSize: 13,
-                            fontWeight: "600",
-                            marginBottom: spacing[1],
-                        }}
-                    >
-                        Dispatch Code: {trade.dispatchCode} (Tap to copy)
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "400" }}>
+                        Dispatch Code: {trade.dispatchCode}
                     </Text>
-                </TouchableOpacity>
-            )}
-
-            {role === "seller" && trade.tradeCode && (
-                <TouchableOpacity
-                    onPress={async () => {
-                        await Clipboard.setStringAsync(trade.tradeCode!);
-                        Alert.alert("Copied", "Trade Code copied to clipboard!");
-                    }}
-                >
-                    <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "600", marginBottom: spacing[1] }}>
-                        Trade Code: {trade.tradeCode} (Tap to copy)
-                    </Text>
-                </TouchableOpacity>
-            )}
-
-            {role === "seller" && trade.riderCode && (
-                <TouchableOpacity
-                    onPress={async () => {
-                        await Clipboard.setStringAsync(trade.riderCode!);
-                        Alert.alert("Copied", "Rider Code copied to clipboard!");
-                    }}
-                >
-                    <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "600", marginBottom: spacing[1] }}>
-                        Rider Code: {trade.riderCode} (Tap to copy)
-                    </Text>
+                    <Ionicons name="copy-outline" size={13} color={colors.muted} />
                 </TouchableOpacity>
             )}
 
@@ -248,12 +248,15 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
                 <TouchableOpacity
                     onPress={async () => {
                         await Clipboard.setStringAsync(trade.releaseCode!);
-                        Alert.alert("Copied", "Delivery Code copied to clipboard!");
+                        Toast.show({ type: "info", text1: "Copied", text2: `Delivery Code (${trade.releaseCode}) copied!` });
                     }}
+                    activeOpacity={0.7}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: spacing[1] }}
                 >
-                    <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "600", marginBottom: spacing[1] }}>
-                        Delivery Code: {trade.releaseCode} (Tap to copy)
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "400" }}>
+                        Delivery Code: {trade.releaseCode}
                     </Text>
+                    <Ionicons name="copy-outline" size={13} color={colors.muted} />
                 </TouchableOpacity>
             )}
 
@@ -261,12 +264,15 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
                 <TouchableOpacity
                     onPress={async () => {
                         await Clipboard.setStringAsync(trade.dropOffCode!);
-                        Alert.alert("Copied", "Post Drop-Off Code copied to clipboard!");
+                        Toast.show({ type: "info", text1: "Copied", text2: `Post Drop-Off Code (${trade.dropOffCode}) copied!` });
                     }}
+                    activeOpacity={0.7}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: spacing[1] }}
                 >
-                    <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "600", marginBottom: spacing[1] }}>
-                        Post Drop-Off Code: {trade.dropOffCode} (Tap to copy)
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "400" }}>
+                        Post Drop-Off Code: {trade.dropOffCode}
                     </Text>
+                    <Ionicons name="copy-outline" size={13} color={colors.muted} />
                 </TouchableOpacity>
             )}
 

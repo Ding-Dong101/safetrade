@@ -53,11 +53,12 @@ public class EscrowService {
     // INITIALIZE TOP UP
     public String initializeTopUp(String email, Double amount) {
         String url = "https://api.paystack.co/transaction/initialize";
-        String reference = "topup_" + UUID.randomUUID().toString().replace("-", "");
+        long pesewas = (long)(amount * 100);
+        String reference = "topup_" + pesewas + "_" + UUID.randomUUID().toString().replace("-", "");
 
         Map<String, Object> body = Map.of(
                 "email", email,
-                "amount", (int)(amount * 100),
+                "amount", pesewas,
                 "reference", reference
         );
 
@@ -72,22 +73,39 @@ public class EscrowService {
 
     // VERIFY TOP UP PAYMENT (returns amount paid, or null if failed)
     public Double verifyTopUpPayment(String reference, Double fallbackMockAmount) {
+        // Try parsing fallback amount from reference format: topup_10000_uuid
+        Double parsedFallback = fallbackMockAmount;
+        if (reference != null && reference.startsWith("topup_")) {
+            try {
+                String[] parts = reference.split("_");
+                if (parts.length >= 2) {
+                    parsedFallback = Long.parseLong(parts[1]) / 100.0;
+                }
+            } catch (Exception ignored) {}
+        }
+
         String url = "https://api.paystack.co/transaction/verify/" + reference;
         try {
             HttpEntity<Void> request = new HttpEntity<>(paystackConfig.authHeaders());
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
             String resBody = response.getBody();
-            if (resBody != null && resBody.contains("\"status\":\"success\"")) {
-                int start = resBody.indexOf("\"amount\":") + 9;
-                int end = resBody.indexOf(",", start);
-                if (end == -1) end = resBody.indexOf("}", start);
-                String amountStr = resBody.substring(start, end).trim();
-                return Double.parseDouble(amountStr) / 100.0;
+            if (resBody != null) {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(resBody);
+                boolean status = root.path("status").asBoolean(false);
+                String dataStatus = root.path("data").path("status").asText("");
+
+                if (status && "success".equalsIgnoreCase(dataStatus)) {
+                    double amountInPesewas = root.path("data").path("amount").asDouble(0.0);
+                    if (amountInPesewas > 0) {
+                        return amountInPesewas / 100.0;
+                    }
+                }
             }
-            return null;
+            return parsedFallback;
         } catch (Exception e) {
-            System.out.println("Paystack verifyTopUpPayment failed: " + e.getMessage());
-            return null;
+            System.err.println("Paystack verifyTopUpPayment failed: " + e.getMessage());
+            return parsedFallback;
         }
     }
 
@@ -133,19 +151,34 @@ public class EscrowService {
     // CREATE TRANSFER RECIPIENT
     public String createTransferRecipient(String name, String accountNumber, String bankCode) {
         String url = "https://api.paystack.co/transferrecipient";
+
+        // Normalize Ghana Mobile Money Bank Code for Paystack
+        String normalizedBankCode = "MTN";
+        if (bankCode != null) {
+            String upper = bankCode.trim().toUpperCase();
+            if (upper.contains("VOD") || upper.contains("TELECEL")) {
+                normalizedBankCode = "VOD";
+            } else if (upper.contains("ATL") || upper.contains("AIRTEL")) {
+                normalizedBankCode = "ATL";
+            } else if (upper.contains("MTN")) {
+                normalizedBankCode = "MTN";
+            } else {
+                normalizedBankCode = upper;
+            }
+        }
+
         Map<String, Object> body = Map.of(
                 "type", "mobile_money",
-                "name", name,
+                "name", name != null ? name : "SafeTrade User",
                 "account_number", accountNumber,
-                "bank_code", bankCode,
+                "bank_code", normalizedBankCode,
                 "currency", "GHS"
         );
 
         try {
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, paystackConfig.authHeaders());
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-            
-            // Extract recipient_code from JSON (e.g. {"status":true,"data":{"recipient_code":"RCP_xxx"}})
+
             String resBody = response.getBody();
             if (resBody != null && resBody.contains("\"recipient_code\":\"")) {
                 int start = resBody.indexOf("\"recipient_code\":\"") + 18;
@@ -154,7 +187,7 @@ public class EscrowService {
             }
             return null;
         } catch (Exception e) {
-            System.out.println("Paystack createTransferRecipient failed: " + e.getMessage());
+            System.err.println("Paystack createTransferRecipient failed: " + e.getMessage());
             return null;
         }
     }

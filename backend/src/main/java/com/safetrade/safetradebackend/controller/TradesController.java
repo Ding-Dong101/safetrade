@@ -387,29 +387,60 @@ public class TradesController {
     }
 
     private ResponseEntity<?> completeTradeAndReleaseFunds(Trades trade, String logContext) {
-        // Credit seller balance in DB
+        boolean transferAttempted = false;
+        boolean transferSuccess = false;
+
         try {
             Optional<Users> sellerOpt = usersRepository.findById(UUID.fromString(trade.getSellerId()));
             if (sellerOpt.isPresent()) {
                 Users seller = sellerOpt.get();
                 Double currentBalance = seller.getBalance() == null ? 0.0 : seller.getBalance();
                 seller.setBalance(currentBalance + trade.getPrice());
-                usersRepository.save(seller);
 
                 String recipientCode = seller.getPaystackRecipientCode();
+
+                // If no recipient code saved yet, but seller has MoMo details saved, create recipient code now
+                if ((recipientCode == null || recipientCode.isEmpty()) 
+                        && seller.getPaymentNumber() != null && !seller.getPaymentNumber().isEmpty()
+                        && seller.getPaymentNetwork() != null && !seller.getPaymentNetwork().isEmpty()) {
+                    String name = seller.getPaymentName() != null && !seller.getPaymentName().isEmpty() 
+                            ? seller.getPaymentName() 
+                            : (seller.getFirstname() + " " + seller.getLastname());
+                    recipientCode = escrowService.createTransferRecipient(name, seller.getPaymentNumber(), seller.getPaymentNetwork());
+                    if (recipientCode != null) {
+                        seller.setPaystackRecipientCode(recipientCode);
+                    }
+                }
+
+                usersRepository.save(seller);
+
+                // Initiate Paystack Mobile Money Transfer to Seller
                 if (recipientCode != null && !recipientCode.isEmpty()) {
-                    escrowService.releaseFunds(trade.getId(), recipientCode, trade.getPrice());
+                    transferAttempted = true;
+                    try {
+                        escrowService.releaseFunds(trade.getId(), recipientCode, trade.getPrice());
+                        transferSuccess = true;
+                        System.out.println("Paystack MoMo transfer initiated for seller " + seller.getUsername() + " (" + recipientCode + ")");
+                    } catch (Exception paystackErr) {
+                        System.err.println("Paystack transfer call failed: " + paystackErr.getMessage());
+                    }
                 }
             }
         } catch (Exception e) {
-            System.err.println("Could not update seller balance: " + e.getMessage());
+            System.err.println("Could not process seller release: " + e.getMessage());
         }
 
         trade.setStatus(TradeStatus.RELEASED);
         Trades saved = tradesRepository.save(trade);
 
+        String sellerMsg = transferSuccess 
+                ? "Delivery confirmed! Funds of GHS " + trade.getPrice() + " have been transferred to your Mobile Money wallet." 
+                : transferAttempted 
+                ? "Delivery confirmed! Payout process initiated for your account balance."
+                : "Delivery confirmed! Funds of GHS " + trade.getPrice() + " added to your balance. Save Mobile Money details in Settings to withdraw.";
+
         sendNotification(trade.getBuyerId(), "RELEASED", "Delivery confirmed and trade completed.");
-        sendNotification(trade.getSellerId(), "RELEASED", "Funds have been credited to your balance.");
+        sendNotification(trade.getSellerId(), "RELEASED", sellerMsg);
 
         return ResponseEntity.ok(saved);
     }

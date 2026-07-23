@@ -309,7 +309,7 @@ const SettingsScreen = () => {
                         </View>
 
                         <Text style={{ color: colors.muted, marginBottom: 8, fontSize: 14 }}>Select Network</Text>
-                        <View style={{ flexDirection: "row", gap: spacing[3], marginBottom: spacing[4] }}>
+                        <View style={{ flexDirection: "row", gap: spacing[2], marginBottom: spacing[4] }}>
                             <TouchableOpacity
                                 onPress={() => setNetwork("MTN")}
                                 style={{
@@ -322,7 +322,7 @@ const SettingsScreen = () => {
                                     alignItems: "center"
                                 }}
                             >
-                                <Text style={{ color: network === "MTN" ? colors.primary : colors.foreground, fontWeight: "600" }}>MTN</Text>
+                                <Text style={{ color: network === "MTN" ? colors.primary : colors.foreground, fontWeight: "600", fontSize: 13 }}>MTN</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() => setNetwork("VOD")}
@@ -336,7 +336,21 @@ const SettingsScreen = () => {
                                     alignItems: "center"
                                 }}
                             >
-                                <Text style={{ color: network === "VOD" ? colors.primary : colors.foreground, fontWeight: "600" }}>Telecel</Text>
+                                <Text style={{ color: network === "VOD" ? colors.primary : colors.foreground, fontWeight: "600", fontSize: 13 }}>Telecel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => setNetwork("ATL")}
+                                style={{
+                                    flex: 1,
+                                    padding: 12,
+                                    borderRadius: 12,
+                                    borderWidth: 1,
+                                    borderColor: network === "ATL" ? colors.primary : colors.border,
+                                    backgroundColor: network === "ATL" ? `${colors.primary}15` : colors.card,
+                                    alignItems: "center"
+                                }}
+                            >
+                                <Text style={{ color: network === "ATL" ? colors.primary : colors.foreground, fontWeight: "600", fontSize: 13 }}>AirtelTigo</Text>
                             </TouchableOpacity>
                         </View>
 
