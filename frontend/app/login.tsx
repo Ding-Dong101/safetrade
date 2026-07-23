@@ -69,8 +69,8 @@ export default function Login() {
                 >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginBottom: spacing[2] }}>
                         <Image
-                            source={require("@/assets/icons/logo.png")}
-                            style={{ width: 44, height: 44, tintColor: "#fff" }}
+                            source={require("@/assets/icon.png")}
+                            style={{ width: 40, height: 40 }}
                             resizeMode="contain"
                         />
                         <Text style={{ color: "#ffffff", fontSize: 32, fontWeight: "800" }}>

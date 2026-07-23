@@ -18,12 +18,10 @@ import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { MOCK_USER } from "@/constants/data";
-import { AvailableJob, RiderJob } from "@/types/rider";
+import { RiderJob } from "@/types/rider";
 import {
-    acceptJob,
     confirmDelivery,
     confirmPickup,
-    getAvailableJobs,
     getOngoingJobs,
 } from "@/services/riderService";
 import { useRouter } from "expo-router";
@@ -253,63 +251,6 @@ const OngoingJobCard = ({ job, onConfirmed }: OngoingJobCardProps) => {
     );
 };
 
-interface AvailableJobRowProps {
-    job: AvailableJob;
-    onAccept: (job: AvailableJob) => void;
-    onIgnore: (jobId: string) => void;
-}
-
-const AvailableJobRow = ({ job, onAccept, onIgnore }: AvailableJobRowProps) => {
-    const { colors, spacing } = useTheme();
-    const displayTitle = getCleanTitle(job.title, job.buyerName);
-
-    return (
-        <Card style={{ marginBottom: spacing[3] }}>
-            <View
-                style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                }}
-            >
-                <View style={{ flex: 1, paddingRight: spacing[2] }}>
-                    <Text
-                        style={{
-                            color: colors.foreground,
-                            fontSize: 16,
-                            fontWeight: "700",
-                            marginBottom: 3,
-                        }}
-                        numberOfLines={1}
-                    >
-                        {displayTitle}
-                    </Text>
-                    <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 4 }} numberOfLines={1}>
-                        Trade Code: {job.tradeCode ?? job.id}
-                    </Text>
-                    <Text style={{ color: colors.muted, fontSize: 13 }}>
-                        Loc: {job.pickupLocation}
-                    </Text>
-                </View>
-
-                <View style={{ gap: spacing[2] }}>
-                    <Button
-                        label="Accept"
-                        onPress={() => onAccept(job)}
-                        style={{ paddingVertical: 8, paddingHorizontal: 20 }}
-                    />
-                    <Button
-                        label="Ignore"
-                        variant="outlined"
-                        onPress={() => onIgnore(job.id)}
-                        style={{ paddingVertical: 8, paddingHorizontal: 20 }}
-                    />
-                </View>
-            </View>
-        </Card>
-    );
-};
-
 export default function RiderHome() {
     const insets = useSafeAreaInsets();
     const router = useRouter();
@@ -317,18 +258,13 @@ export default function RiderHome() {
     const { user } = useAuth();
 
     const [ongoing, setOngoing] = useState<RiderJob[]>([]);
-    const [available, setAvailable] = useState<AvailableJob[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const load = async () => {
             try {
-                const [ongoingJobs, availableJobs] = await Promise.all([
-                    getOngoingJobs(),
-                    getAvailableJobs(),
-                ]);
+                const ongoingJobs = await getOngoingJobs();
                 setOngoing(ongoingJobs);
-                setAvailable(availableJobs);
             } finally {
                 setIsLoading(false);
             }
@@ -350,27 +286,6 @@ export default function RiderHome() {
         );
     };
 
-    const handleAccept = async (job: AvailableJob) => {
-        await acceptJob(job.id);
-        setAvailable((jobs) => jobs.filter((item) => item.id !== job.id));
-        setOngoing((jobs) => [
-            ...jobs,
-            {
-                id: job.id,
-                tradeId: job.tradeId,
-                buyerName: job.buyerName,
-                sellerName: "",
-                pickupLocation: job.pickupLocation,
-                dropoffLocation: job.dropoffLocation,
-                status: "pending_dispatch",
-                assignedAt: new Date().toISOString(),
-            },
-        ]);
-    };
-
-    const handleIgnore = (jobId: string) => {
-        setAvailable((jobs) => jobs.filter((item) => item.id !== jobId));
-    };
 
     if (isLoading) {
         return <LoadingSpinner message="Loading deliveries..." />;
@@ -443,34 +358,7 @@ export default function RiderHome() {
                     ))
                 )}
 
-                <Text
-                    style={{
-                        color: colors.foreground,
-                        fontSize: 18,
-                        fontWeight: "700",
-                        textDecorationLine: "underline",
-                        marginTop: spacing[5],
-                        marginBottom: spacing[3],
-                    }}
-                >
-                    Available
-                </Text>
 
-                {available.length === 0 ? (
-                    <EmptyState
-                        title="No Available Jobs"
-                        message="New delivery jobs will show up here."
-                    />
-                ) : (
-                    available.map((job) => (
-                        <AvailableJobRow
-                            key={job.id}
-                            job={job}
-                            onAccept={handleAccept}
-                            onIgnore={handleIgnore}
-                        />
-                    ))
-                )}
             </ScrollView>
         </KeyboardAvoidingView>
     );

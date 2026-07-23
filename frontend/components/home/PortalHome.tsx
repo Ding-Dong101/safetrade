@@ -103,7 +103,7 @@ const PortalHome = ({ role }: PortalHomeProps) => {
                     { text: "Cancel", style: "cancel" },
                     { 
                         text: "Top Up", 
-                        onPress: (amountStr) => {
+                        onPress: (amountStr?: string) => {
                             const amount = parseFloat(amountStr || "");
                             if (!isNaN(amount) && amount > 0) {
                                 processTopUp(amount);

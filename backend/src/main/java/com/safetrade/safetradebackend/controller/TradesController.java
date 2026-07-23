@@ -465,6 +465,6 @@ public class TradesController {
 
     @Data
     public static class RiderConfirmRequest {
-        private String tradeId;
+        private String releaseCode;
     }
 }

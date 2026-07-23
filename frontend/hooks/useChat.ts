@@ -4,7 +4,7 @@ import SockJS from "sockjs-client";
 import { useAuth } from "@/hooks/useAuth";
 import { getMessages, sendMessage as sendMessageRest, Message } from "@/services/messageService";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080/api";
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://safetrade-or1w.onrender.com/api";
 const SOCKET_URL = API_URL.replace(/\/api\/?$/, "") + "/ws";
 
 export const useChat = (tradeId: string) => {

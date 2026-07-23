@@ -240,8 +240,8 @@ export default function PostHome() {
             Alert.alert(
                 "Verification Failed",
                 err?.response?.data ??
-                    err?.message ??
-                    "The code did not match. Please try again."
+                err?.message ??
+                "The code did not match. Please try again."
             );
         }
     };

@@ -85,7 +85,7 @@ export default function SignUp() {
                 >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginBottom: spacing[2] }}>
                         <Image
-                            source={require("@/assets/icons/logo.png")}
+                            source={require("@/assets/icon.png")}
                             style={{ width: 44, height: 44, tintColor: "#fff" }}
                             resizeMode="contain"
                         />

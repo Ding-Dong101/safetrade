@@ -33,7 +33,7 @@ public class Users {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "float8 default 0.0")
     private Double balance = 0.0;
 
     @Column
@@ -41,6 +41,15 @@ public class Users {
 
     @Column
     private String paystackRecipientCode;
+
+    @Column
+    private String paymentName;
+
+    @Column
+    private String paymentNumber;
+
+    @Column
+    private String paymentNetwork;
 
     @ManyToMany
     private List<Trades> trades;

@@ -2,6 +2,7 @@ import {
     AuthResponse,
     LoginCredentials,
     RegisterCredentials,
+    User,
 } from "@/types/auth";
 import api from "@/services/api";
 
@@ -42,7 +43,7 @@ export const updateBankDetails = async (details: {
     name: string;
     accountNumber: string;
     bankCode: string;
-}): Promise<{ message: string; recipientCode: string }> => {
+}): Promise<{ message: string; recipientCode: string; user: User }> => {
     const { data } = await api.post("/users/bank-details", details);
     return data;
 };

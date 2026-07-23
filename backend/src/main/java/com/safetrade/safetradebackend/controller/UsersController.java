@@ -26,27 +26,48 @@ public class UsersController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> createUser(@RequestBody Users user) {
+    public ResponseEntity<?> createUser(@RequestBody Users user) {
+        for (Users existing : usersRepository.findAll()) {
+            if (existing.getUsername() != null && existing.getUsername().equalsIgnoreCase(user.getUsername())) {
+                return ResponseEntity.status(400).body(java.util.Map.of("error", "Username already exists"));
+            }
+            if (user.getEmail() != null && !user.getEmail().isEmpty() && existing.getEmail() != null && existing.getEmail().equalsIgnoreCase(user.getEmail())) {
+                return ResponseEntity.status(400).body(java.util.Map.of("error", "Email already exists"));
+            }
+        }
+
         Users newUser = new Users();
         newUser.setUsername(user.getUsername());
         newUser.setFirstname(user.getFirstname());
         newUser.setLastname(user.getLastname());
         newUser.setPassword(user.getPassword());
-        newUser.setEmail(user.getEmail());
+        if (user.getEmail() == null || user.getEmail().isEmpty()) {
+            newUser.setEmail(user.getUsername() + "@phone.local");
+        } else {
+            newUser.setEmail(user.getEmail());
+        }
         newUser.setBalance(0.0);
 
-        Users saved = usersRepository.save(newUser);
-        return ResponseEntity.status(201).body(buildAuthResponse(saved));
+        try {
+            Users saved = usersRepository.save(newUser);
+            return ResponseEntity.status(201).body(buildAuthResponse(saved));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(java.util.Map.of("error", "Registration failed: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Users user) {
+        String inputStr = user.getUsername() != null ? user.getUsername().trim() : "";
         for (Users user1 : usersRepository.findAll()) {
-            if (user1.getUsername().equals(user.getUsername()) && user1.getPassword().equals(user.getPassword())) {
+            boolean matchesUsername = user1.getUsername() != null && user1.getUsername().equalsIgnoreCase(inputStr);
+            boolean matchesEmail = user1.getEmail() != null && user1.getEmail().equalsIgnoreCase(inputStr);
+            
+            if ((matchesUsername || matchesEmail) && user.getPassword() != null && user.getPassword().equals(user1.getPassword())) {
                 return ResponseEntity.ok(buildAuthResponse(user1));
             }
         }
-        return ResponseEntity.status(401).body(java.util.Map.of("error", "Invalid username or password"));
+        return ResponseEntity.status(401).body(java.util.Map.of("error", "Invalid username/email or password"));
     }
 
     @GetMapping({"/{id}", "/get/id/{id}"})
@@ -146,8 +167,13 @@ public class UsersController {
         for (Users user : usersRepository.findAll()) {
             if (user.getUsername().equals(principal.getName())) {
                 user.setPaystackRecipientCode(recipientCode);
+                user.setPaymentName(name);
+                user.setPaymentNumber(accountNumber);
+                user.setPaymentNetwork(bankCode);
                 usersRepository.save(user);
-                return ResponseEntity.ok(java.util.Map.of("message", "Bank details updated successfully", "recipientCode", recipientCode));
+                
+                AuthResponse.UserDto userDto = buildAuthResponse(user).getUser();
+                return ResponseEntity.ok(java.util.Map.of("message", "Bank details updated successfully", "recipientCode", recipientCode, "user", userDto));
             }
         }
         return ResponseEntity.notFound().build();
@@ -170,6 +196,9 @@ public class UsersController {
                 .email(user.getEmail())
                 .isAdmin(false)
                 .balance(user.getBalance())
+                .paymentName(user.getPaymentName())
+                .paymentNumber(user.getPaymentNumber())
+                .paymentNetwork(user.getPaymentNetwork())
                 .createdAt(java.time.LocalDateTime.now().toString())
                 .build();
 

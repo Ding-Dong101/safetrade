@@ -9,6 +9,9 @@ export interface User {
     isAdmin: boolean;
     createdAt: string;
     balance?: number;
+    paymentName?: string;
+    paymentNumber?: string;
+    paymentNetwork?: string;
 }
 
 export interface LoginCredentials {
