@@ -241,9 +241,9 @@ const PortalHome = ({ role }: PortalHomeProps) => {
                     }
                     contentContainerStyle={{
                         paddingHorizontal: spacing[5],
-                        paddingBottom: spacing[24],
+                        paddingBottom: insets.bottom + 140,
                     }}
-                    showsVerticalScrollIndicator={false}
+                    showsVerticalScrollIndicator={true}
                 />
             </View>
 

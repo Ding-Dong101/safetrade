@@ -43,8 +43,8 @@ export default function EnterRiderCode() {
         try {
             setIsAccepting(true);
             await riderAcceptDelivery(trade.id);
-            Alert.alert("Delivery Accepted", "You've accepted this delivery.");
-            router.replace(`/(rider)/dropoff/${trade.id}` as any);
+            Alert.alert("Delivery Accepted", "You have accepted this delivery. Enter the seller's Dispatch Code under Ongoing Deliveries to confirm pickup.");
+            router.replace("/(rider)/home" as any);
         } catch (err: any) {
             Alert.alert("Error", err?.response?.data ?? err?.message ?? "Could not accept delivery.");
         } finally {

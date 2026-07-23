@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
     View,
     Text,
@@ -24,7 +24,7 @@ import {
     confirmPickup,
     getOngoingJobs,
 } from "@/services/riderService";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 
 interface OngoingJobCardProps {
     job: RiderJob;
@@ -126,106 +126,28 @@ const OngoingJobCard = ({ job, onConfirmed }: OngoingJobCardProps) => {
             </Text>
 
             {isInTransit ? (
-                /* ── Dual path section for IN_TRANSIT jobs ── */
-                <View style={{ gap: spacing[4] }}>
-                    {/* Option A: Buyer gives code directly */}
-                    <View>
-                        <View
-                            style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                                gap: spacing[2],
-                                marginBottom: spacing[2],
-                            }}
-                        >
-                            <View
-                                style={{
-                                    backgroundColor: colors.primary + "22",
-                                    borderRadius: 12,
-                                    paddingHorizontal: spacing[2],
-                                    paddingVertical: 2,
-                                }}
-                            >
-                                <Text style={{ color: colors.primary, fontSize: 10, fontWeight: "700" }}>
-                                    PATH A
-                                </Text>
-                            </View>
-                            <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "600" }}>
-                                Direct Delivery to Buyer
-                            </Text>
-                        </View>
-                        <Text style={{ color: colors.muted, fontSize: 12, marginBottom: spacing[2] }}>
-                            The buyer gives you their Direct Delivery Code. Enter it below to complete the trade and release funds immediately.
-                        </Text>
-                        <Input
-                            placeholder="Enter Buyer's Delivery Code"
-                            value={code}
-                            onChangeText={(value) => setCode(value.toUpperCase())}
-                            autoCapitalize="characters"
-                            autoCorrect={false}
-                            containerStyle={{ marginBottom: spacing[2] }}
-                        />
-                        <Button
-                            label="Confirm Direct Delivery"
-                            variant="primary"
-                            onPress={handleConfirm}
-                            isLoading={isSubmitting}
-                            style={{ alignSelf: "stretch" }}
-                        />
-                    </View>
-
-                    {/* Divider */}
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-                        <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-                        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>OR</Text>
-                        <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-                    </View>
-
-                    {/* Option B: Post Office drop-off */}
-                    <View>
-                        <View
-                            style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                                gap: spacing[2],
-                                marginBottom: spacing[2],
-                            }}
-                        >
-                            <View
-                                style={{
-                                    backgroundColor: colors.accent + "22",
-                                    borderRadius: 12,
-                                    paddingHorizontal: spacing[2],
-                                    paddingVertical: 2,
-                                }}
-                            >
-                                <Text style={{ color: colors.accent, fontSize: 10, fontWeight: "700" }}>
-                                    PATH B
-                                </Text>
-                            </View>
-                            <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "600" }}>
-                                Drop Off at Post Office
-                            </Text>
-                        </View>
-                        <Text style={{ color: colors.muted, fontSize: 12, marginBottom: spacing[2] }}>
-                            The post operator shows you the Drop-Off Code from their portal. Enter it below to confirm receipt at the post.
-                        </Text>
-                        <Input
-                            placeholder="Enter Post Drop-Off Code"
-                            value={code}
-                            onChangeText={(value) => setCode(value.toUpperCase())}
-                            autoCapitalize="characters"
-                            autoCorrect={false}
-                            containerStyle={{ marginBottom: spacing[2] }}
-                        />
-                        <Button
-                            label="Confirm Post Drop-Off"
-                            variant="warning"
-                            onPress={handleConfirm}
-                            isLoading={isSubmitting}
-                            style={{ alignSelf: "stretch" }}
-                        />
-                    </View>
+                <View>
+                    <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "600", marginBottom: spacing[1] }}>
+                        Delivery Confirmation
+                    </Text>
+                    <Text style={{ color: colors.muted, fontSize: 12, marginBottom: spacing[3] }}>
+                        Ask the buyer for their 6-digit Delivery Code upon handing over the parcel.
+                    </Text>
+                    <Input
+                        placeholder="Enter Buyer's Delivery Code"
+                        value={code}
+                        onChangeText={(value) => setCode(value.toUpperCase())}
+                        autoCapitalize="characters"
+                        autoCorrect={false}
+                        containerStyle={{ marginBottom: spacing[3] }}
+                    />
+                    <Button
+                        label="Confirm Delivery & Complete Trade"
+                        variant="primary"
+                        onPress={handleConfirm}
+                        isLoading={isSubmitting}
+                        style={{ alignSelf: "stretch" }}
+                    />
                 </View>
             ) : (
                 /* ── Standard dispatch code entry ── */
@@ -260,17 +182,19 @@ export default function RiderHome() {
     const [ongoing, setOngoing] = useState<RiderJob[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const load = async () => {
-            try {
-                const ongoingJobs = await getOngoingJobs();
-                setOngoing(ongoingJobs);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        load();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            const load = async () => {
+                try {
+                    const ongoingJobs = await getOngoingJobs();
+                    setOngoing(ongoingJobs);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            load();
+        }, [])
+    );
 
     const handleConfirmed = (jobId: string) => {
         setOngoing((jobs) =>

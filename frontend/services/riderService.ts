@@ -38,12 +38,15 @@ const toRiderJob = (trade: Trade): RiderJob => ({
 });
 
 export const getOngoingJobs = async (): Promise<RiderJob[]> => {
-    const riderId = useAuthStore.getState().user?.id;
+    const user = useAuthStore.getState().user;
     const { data } = await api.get<Trade[]>("/trades/?role=all");
     return data
-        .filter(
-            (trade) => trade.riderId === riderId && trade.status === "IN_TRANSIT"
-        )
+        .filter((trade) => {
+            const isRiderMatch = !trade.riderId ||
+                trade.riderId === user?.id ||
+                trade.riderId === user?.username;
+            return isRiderMatch && (trade.status === "DISPATCH_PENDING" || trade.status === "IN_TRANSIT");
+        })
         .map(toRiderJob);
 };
 
@@ -83,15 +86,16 @@ export const confirmPickup = async (
     return { jobId };
 };
 
-// confirmDelivery accepts either the Post Drop-Off code or the Direct Delivery code.
-// The backend validates both and routes to the correct fulfillment path automatically.
 export const confirmDelivery = async (
     jobId: string,
     code: string
 ): Promise<{ jobId: string; status: string }> => {
-    const { data } = await api.post<Trade>(`/trades/${jobId}/post-dropoff`, {
-        dropOffCode: code.trim(),
-        code: code.trim(),
+    const cleanCode = code.trim();
+    const { data } = await api.post<Trade>(`/trades/${jobId}/rider-confirm`, {
+        releaseCode: cleanCode,
+        directDeliveryCode: cleanCode,
+        code: cleanCode,
+        tradeId: cleanCode,
     });
     return { jobId, status: data.status };
 };

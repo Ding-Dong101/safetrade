@@ -1,5 +1,7 @@
 import { View, Text, ScrollView, Alert, TouchableOpacity } from "react-native";
 import * as Clipboard from "expo-clipboard";
+import { Ionicons } from "@expo/vector-icons";
+import Toast from "react-native-toast-message";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -277,15 +279,22 @@ export default function TradeDetails() {
                                 onPress={async () => {
                                     if (selectedTrade.dispatchCode) {
                                         await Clipboard.setStringAsync(selectedTrade.dispatchCode);
-                                        Alert.alert("Copied", "Dispatch Code copied to clipboard!");
+                                        Toast.show({ type: "info", text1: "Copied", text2: `Dispatch Code (${selectedTrade.dispatchCode}) copied!` });
                                     }
                                 }}
+                                activeOpacity={0.7}
                             >
-                                <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
-                                    Dispatch Code (share with the rider - tap to copy)
-                                </Text>
-                                <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "800" }}>
+                                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing[1] }}>
+                                    <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>
+                                        Dispatch Code
+                                    </Text>
+                                    <Ionicons name="copy-outline" size={16} color={colors.primary} />
+                                </View>
+                                <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "800", letterSpacing: 2 }}>
                                     {selectedTrade.dispatchCode}
+                                </Text>
+                                <Text style={{ color: colors.muted, fontSize: 11, marginTop: spacing[1] }}>
+                                    Note: Share this 6-digit code with your rider when they pick up the parcel.
                                 </Text>
                             </TouchableOpacity>
                         </Card>
@@ -293,30 +302,31 @@ export default function TradeDetails() {
 
                 {isBuyer &&
                     selectedTrade.status === "IN_TRANSIT" &&
-                    selectedTrade.directDeliveryCode && (
+                    (selectedTrade.releaseCode || selectedTrade.directDeliveryCode) && (
                         <Card>
-                            <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
-                                Direct Delivery Code — give to rider to complete trade immediately
-                            </Text>
-                            <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "800", letterSpacing: 2 }}>
-                                {selectedTrade.directDeliveryCode}
-                            </Text>
-                            <Text style={{ color: colors.muted, fontSize: 12, marginTop: spacing[1] }}>
-                                Alternatively, the rider can drop off at the post office using the post drop-off code.
-                            </Text>
-                        </Card>
-                    )}
-
-                {isBuyer &&
-                    selectedTrade.status === "AT_POST" &&
-                    selectedTrade.releaseCode && (
-                        <Card>
-                            <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[1] }}>
-                                Pick-Up Code — show at the SafeTrade post office to collect
-                            </Text>
-                            <Text style={{ color: colors.accent, fontSize: 24, fontWeight: "800", letterSpacing: 2 }}>
-                                {selectedTrade.releaseCode}
-                            </Text>
+                            <TouchableOpacity
+                                onPress={async () => {
+                                    const code = selectedTrade.releaseCode || selectedTrade.directDeliveryCode;
+                                    if (code) {
+                                        await Clipboard.setStringAsync(code);
+                                        Toast.show({ type: "info", text1: "Copied", text2: `Delivery Code (${code}) copied!` });
+                                    }
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing[1] }}>
+                                    <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>
+                                        Delivery Code
+                                    </Text>
+                                    <Ionicons name="copy-outline" size={16} color={colors.primary} />
+                                </View>
+                                <Text style={{ color: colors.primary, fontSize: 24, fontWeight: "800", letterSpacing: 2 }}>
+                                    {selectedTrade.releaseCode || selectedTrade.directDeliveryCode}
+                                </Text>
+                                <Text style={{ color: colors.muted, fontSize: 11, marginTop: spacing[1] }}>
+                                    Note: Give this 6-digit code to the rider upon parcel delivery to complete the trade and release funds.
+                                </Text>
+                            </TouchableOpacity>
                         </Card>
                     )}
 
