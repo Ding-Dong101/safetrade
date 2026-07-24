@@ -18,15 +18,16 @@ public class EscrowService {
         this.paystackConfig = paystackConfig;
     }
 
-    // FUND ESCROW
-    public String fundEscrow(UUID tradeId, String buyerEmail, Double amount) {
+    public String fundEscrow(UUID tradeId, String buyerEmail, Double amount, String sellerSubaccountCode) {
         String url = "https://api.paystack.co/transaction/initialize";
         String reference = "trade_" + tradeId + "_" + System.currentTimeMillis();
 
         Map<String, Object> body = Map.of(
                 "email", (buyerEmail != null && !buyerEmail.isEmpty()) ? buyerEmail : "buyer@campus.edu",
                 "amount", (int)(amount * 100),
-                "reference", reference
+                "reference", reference,
+                "subaccount", sellerSubaccountCode,   //
+                "bearer", "subaccount"                //
         );
 
         try {
@@ -35,10 +36,10 @@ public class EscrowService {
             return response.getBody();
         } catch (Exception e) {
             System.err.println("Paystack fundEscrow error: " + e.getMessage());
-            // Fallback URL response so dev/test mode trades never crash with 500
             return "{\"status\":true,\"data\":{\"authorization_url\":\"https://checkout.paystack.com\",\"reference\":\"" + reference + "\"}}";
         }
     }
+
 
     // VERIFY PAYMENT
     public boolean verifyPayment(String reference) {
@@ -117,25 +118,6 @@ public class EscrowService {
         System.out.println("Trade " + tradeId + " marked as DELIVERED in EscrowService");
     }
 
-    // RELEASE FUNDS
-    public String releaseFunds(UUID tradeId, String recipientCode, Double amount) {
-        String url = "https://api.paystack.co/transfer";
-
-        Map<String, Object> body = Map.of(
-                "source", "balance",
-                "amount", (int)(amount * 100),
-                "recipient", recipientCode,
-                "reason", "Escrow release for trade " + tradeId
-        );
-
-        try {
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, paystackConfig.authHeaders());
-            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-            return response.getBody();
-        } catch (Exception e) {
-            throw new RuntimeException("Paystack releaseFunds failed: " + e.getMessage(), e);
-        }
-    }
 
     // REFUND BUYER
     public String refundBuyer(String reference) {
@@ -150,6 +132,32 @@ public class EscrowService {
             throw new RuntimeException("Paystack refundBuyer failed: " + e.getMessage(), e);
         }
     }
+    // RELEASE FUNDS
+    public String releaseFunds(UUID tradeId, String recipientCode, Double amount) {
+        String url = "https://api.paystack.co/transfer";
+
+        Map<String, Object> body = Map.of(
+                "source", "balance",
+                "amount", (int)(amount * 100),   // Paystack expects kobo/pesewas
+                "recipient", recipientCode,
+                "reason", "Escrow release for trade " + tradeId
+        );
+
+        try {
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, paystackConfig.authHeaders());
+            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+            return response.getBody();
+        } catch (org.springframework.web.client.HttpClientErrorException ex) {
+
+            System.err.println("Paystack rejected transfer: " + ex.getResponseBodyAsString());
+            // Throw a controlled exception so controller can catch it
+            throw new RuntimeException("Paystack transfer failed: " + ex.getResponseBodyAsString());
+        } catch (Exception ex) {
+            System.err.println("Unexpected error during Paystack transfer: " + ex.getMessage());
+            throw new RuntimeException("Unexpected error during Paystack transfer", ex);
+        }
+    }
+
 
     // CREATE TRANSFER RECIPIENT
     public String createTransferRecipient(String name, String accountNumber, String bankCode) {

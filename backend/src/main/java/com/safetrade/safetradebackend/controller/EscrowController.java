@@ -94,13 +94,18 @@ public class EscrowController {
         String rc = recipientCode != null ? recipientCode : "RCP_dummy_seller";
         Double amt = amount != null ? amount : trade.getPrice();
 
-        escrowService.releaseFunds(tradeId, rc, amt);
-        trade.setStatus(TradeStatus.RELEASED);
-        Trades saved = tradesRepository.save(trade);
+        try {
+            escrowService.releaseFunds(tradeId, rc, amt);
+            trade.setStatus(TradeStatus.RELEASED);
+            Trades saved = tradesRepository.save(trade);
 
-        sendNotification(trade.getSellerId(), "ESCROW_RELEASED", "Funds have been released for trade #" + tradeId);
+            sendNotification(trade.getSellerId(), "ESCROW_RELEASED", "Funds have been released for trade #" + tradeId);
 
-        return ResponseEntity.ok(saved);
+            return ResponseEntity.ok(saved);
+        } catch (Exception ex) {
+            // 👇 Instead of crashing with 500, return a clean message
+            return ResponseEntity.status(400).body("Payout temporarily unavailable, please contact support");
+        }
     }
 
     @PostMapping("/refund/{tradeId}")
@@ -143,7 +148,7 @@ public class EscrowController {
         try {
             Optional<com.safetrade.safetradebackend.model.Users> user = usersRepository.findById(UUID.fromString(userId));
             if(user.isPresent() && user.get().getPushToken() != null) {
-                notificationService.sendPushNotification(user.get().getPushToken(), type, message);
+                notificationService.sendPushNotification(   user.ge t().getPushToken(), type, message);
             }
         } catch (Exception e) {
             System.err.println("Failed to send notification: " + e.getMessage());
