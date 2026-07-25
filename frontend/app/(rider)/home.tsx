@@ -6,6 +6,7 @@ import {
     KeyboardAvoidingView,
     Platform,
     Alert,
+    RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Card from "@/components/ui/Card";
@@ -81,7 +82,7 @@ const OngoingJobCard = ({ job, onConfirmed }: OngoingJobCardProps) => {
         } catch (err: any) {
             Alert.alert(
                 "Invalid Code",
-                err?.response?.data ?? err?.message ?? "The code did not match. Please try again."
+                err?.response?.data?.message ?? err?.message ?? "The code did not match. Please try again."
             );
         } finally {
             setIsSubmitting(false);
@@ -181,19 +182,22 @@ export default function RiderHome() {
 
     const [ongoing, setOngoing] = useState<RiderJob[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const loadJobs = useCallback(async () => {
+        try {
+            const ongoingJobs = await getOngoingJobs();
+            setOngoing(ongoingJobs);
+        } finally {
+            setIsLoading(false);
+            setIsRefreshing(false);
+        }
+    }, []);
 
     useFocusEffect(
         useCallback(() => {
-            const load = async () => {
-                try {
-                    const ongoingJobs = await getOngoingJobs();
-                    setOngoing(ongoingJobs);
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-            load();
-        }, [])
+            loadJobs();
+        }, [loadJobs])
     );
 
     const handleConfirmed = (jobId: string) => {
@@ -228,6 +232,16 @@ export default function RiderHome() {
                 }}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefreshing}
+                        onRefresh={() => {
+                            setIsRefreshing(true);
+                            loadJobs();
+                        }}
+                        tintColor={colors.primary}
+                    />
+                }
             >
                 <View
                     style={{

@@ -1,4 +1,4 @@
-import { View, Text, FlatList, Alert, Platform, Linking, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, Alert, Platform, Linking, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, ActivityIndicator, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,7 +25,7 @@ const PortalHome = ({ role }: PortalHomeProps) => {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { user, token, setUser } = useAuth();
-    const { trades, isLoading } = useTrades();
+    const { trades, isLoading, refetch } = useTrades();
     const { switchRole } = useRole();
     const { colors, spacing } = useTheme();
 
@@ -33,6 +33,13 @@ const PortalHome = ({ role }: PortalHomeProps) => {
     const [topUpAmount, setTopUpAmount] = useState("");
     const [isInitializing, setIsInitializing] = useState(false);
     const [pendingTopUpRef, setPendingTopUpRef] = useState<string | null>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        await refetch();
+        setIsRefreshing(false);
+    };
 
     useEffect(() => {
         switchRole(role);
@@ -222,6 +229,8 @@ const PortalHome = ({ role }: PortalHomeProps) => {
                 <FlatList
                     data={trades}
                     keyExtractor={(item) => item.id}
+                    refreshing={isRefreshing}
+                    onRefresh={handleRefresh}
                     renderItem={({ item }) => (
                         <TradeCard
                             trade={item}

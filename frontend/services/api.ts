@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { useAuthStore } from "@/store/authStore";
 
 const BASE_URL = "https://safetrade-or1w.onrender.com/api";
@@ -14,7 +15,8 @@ const request = async <T = any>(
     const response = await fetch(`${BASE_URL}${path}`, {
         method,
         headers: {
-            "Content-Type": "application/json",
+            ...(["POST", "PUT", "PATCH"].includes(method.toUpperCase()) ? { "Content-Type": "application/json" } : {}),
+            "User-Agent": `SafeTrade/1.0 (${Platform.OS})`,
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -29,13 +31,29 @@ const request = async <T = any>(
     }
 
     if (!response.ok) {
-        console.error(`[API Error] ${method} ${path} - Status: ${response.status}`, data);
+        if (response.status === 401 || response.status === 403) {
+            console.warn(`[API Auth Expired/Forbidden] ${method} ${path} - Status: ${response.status}`);
+        } else {
+            console.error(`[API Error] ${method} ${path} - Status: ${response.status}`, data);
+        }
         // Stored token expired or was rejected (or cross-environment 403) — drop the session
         // so the app redirects to login instead of failing on every request.
         if ((response.status === 401 || response.status === 403) && token && !path.includes("/login")) {
             useAuthStore.getState().clearUser();
         }
-        const error: any = new Error(data?.message ?? `Request failed (${response.status})`);
+        let errorMessage = `Request failed (${response.status})`;
+        if (typeof data === "string") {
+            errorMessage = data;
+        } else if (data && typeof data === "object") {
+            errorMessage = data.message || data.error || errorMessage;
+        }
+
+        // Add helpful context for 500 errors, which often relate to Paystack payout rejections on Render
+        if (response.status >= 500) {
+             errorMessage = `Server Error: ${errorMessage}. (If confirming delivery, ensure the Seller's Mobile Money details are valid and saved in their Settings).`;
+        }
+
+        const error: any = new Error(errorMessage);
         error.response = { status: response.status, data };
         throw error;
     }

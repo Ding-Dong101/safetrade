@@ -239,7 +239,7 @@ export default function PostHome() {
         } catch (err: any) {
             Alert.alert(
                 "Verification Failed",
-                err?.response?.data ??
+                err?.response?.data?.message ??
                 err?.message ??
                 "The code did not match. Please try again."
             );
