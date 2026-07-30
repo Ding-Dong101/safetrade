@@ -7,9 +7,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTrades } from "@/hooks/useTrades";
 import PortalSwitcher from "@/components/home/PortalSwitcher";
 import BalanceCard from "@/components/home/BalanceCard";
+import BalanceCardSkeleton from "@/components/home/BalanceCardSkeleton";
 import TradeCard from "@/components/trade/TradeCard";
+import TradeCardSkeleton from "@/components/trade/TradeCardSkeleton";
 import EmptyState from "@/components/shared/EmptyState";
-import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { MOCK_USER } from "@/constants/data";
 import { Trade } from "@/types/trade";
 import { useEffect, useRef, useState } from "react";
@@ -189,7 +190,57 @@ const PortalHome = ({ role }: PortalHomeProps) => {
     const availableBalance = user?.balance ?? 0;
 
     if (isLoading) {
-        return <LoadingSpinner message="Loading trades..." />;
+        return (
+            <View style={{ flex: 1, backgroundColor: colors.primary }}>
+                {/* Skeleton balance header */}
+                <View
+                    style={{
+                        paddingHorizontal: spacing[5],
+                        paddingTop: insets.top + spacing[6],
+                        paddingBottom: spacing[6],
+                    }}
+                >
+                    <View
+                        style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: spacing[6],
+                        }}
+                    >
+                        <Text style={{ color: "#ffffff", fontSize: 28, fontWeight: "800" }}>
+                            Hello {user?.firstName ?? MOCK_USER.name},
+                        </Text>
+                        <PortalSwitcher role={role} />
+                    </View>
+                    <BalanceCardSkeleton />
+                </View>
+
+                {/* Skeleton trades sheet */}
+                <View
+                    style={{
+                        flex: 1,
+                        backgroundColor: colors.background,
+                        borderTopLeftRadius: 40,
+                        borderTopRightRadius: 40,
+                        paddingTop: spacing[6],
+                        paddingHorizontal: spacing[5],
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: -4 },
+                        shadowOpacity: 0.12,
+                        shadowRadius: 16,
+                        elevation: 12,
+                    }}
+                >
+                    <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: "700", marginBottom: spacing[4] }}>
+                        Active Trades
+                    </Text>
+                    <TradeCardSkeleton />
+                    <TradeCardSkeleton />
+                    <TradeCardSkeleton />
+                </View>
+            </View>
+        );
     }
 
     return (

@@ -116,7 +116,43 @@ public class TradesController {
         return ResponseEntity.status(201).body(saved);
     }
 
+    /** Returns trade details + seller name for a given trade code — does NOT join the trade. */
+    @GetMapping("/preview/{code}")
+    public ResponseEntity<?> previewTradeByCode(@PathVariable String code) {
+        Optional<Trades> optionalTrade = tradesRepository.findByTradeCode(code);
+        if (optionalTrade.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Trades trade = optionalTrade.get();
+
+        // Resolve seller display name
+        String sellerName = "Unknown Seller";
+        if (trade.getSellerId() != null) {
+            try {
+                Optional<Users> sellerOpt = usersRepository.findById(UUID.fromString(trade.getSellerId()));
+                if (sellerOpt.isPresent()) {
+                    Users seller = sellerOpt.get();
+                    sellerName = (seller.getFirstName() != null ? seller.getFirstName() : "")
+                            + (seller.getLastName() != null ? " " + seller.getLastName() : "");
+                    sellerName = sellerName.trim();
+                    if (sellerName.isEmpty()) sellerName = seller.getUsername();
+                }
+            } catch (Exception ignored) {}
+        }
+
+        java.util.Map<String, Object> preview = new java.util.LinkedHashMap<>();
+        preview.put("tradeCode", trade.getTradeCode());
+        preview.put("title", trade.getTitle());
+        preview.put("description", trade.getDescription());
+        preview.put("price", trade.getPrice());
+        preview.put("sellerName", sellerName);
+        preview.put("status", trade.getStatus());
+
+        return ResponseEntity.ok(preview);
+    }
+
     @PostMapping("/{id}/join")
+
     public ResponseEntity<?> joinTrade(@PathVariable UUID id) {
         Optional<Trades> optionalTrade = tradesRepository.findById(id);
         if (optionalTrade.isEmpty()) {

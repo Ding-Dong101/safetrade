@@ -1,11 +1,27 @@
 import { CreateTradePayload, Trade, TradeStatus } from "@/types/trade";
 import { Role } from "@/types/auth";
 import api from "@/services/api";
+
+export interface TradePreview {
+    tradeCode: string;
+    title: string;
+    description?: string;
+    price: number;
+    sellerName: string;
+    status: string;
+}
+
 // Real trade service backed by the Spring Boot API (/api/trades).
 // The backend Trades entity matches the frontend Trade type field-for-field.
 export const getTrades = async (role: Role): Promise<Trade[]> => {
     const query = role === "buyer" || role === "seller" ? `?role=${role}` : "";
     const { data } = await api.get<Trade[]>(`/trades/${query}`);
+    return data;
+};
+
+/** Fetches trade details for preview — does NOT join the trade. */
+export const previewTradeByCode = async (code: string): Promise<TradePreview> => {
+    const { data } = await api.get<TradePreview>(`/trades/preview/${code.trim()}`);
     return data;
 };
 // All trades regardless of who is party to them — used by rider and post portals.

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Text, ScrollView, Switch, TouchableOpacity, Alert, Platform, Modal, TextInput, KeyboardAvoidingView, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, Switch, TouchableOpacity, Alert, Platform, Modal, TextInput, KeyboardAvoidingView, ActivityIndicator, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -327,43 +327,58 @@ const SettingsScreen = () => {
                                 onPress={() => setNetwork("MTN")}
                                 style={{
                                     flex: 1,
-                                    padding: 12,
+                                    paddingVertical: 10,
                                     borderRadius: 12,
-                                    borderWidth: 1,
+                                    borderWidth: 2,
                                     borderColor: network === "MTN" ? colors.primary : colors.border,
                                     backgroundColor: network === "MTN" ? `${colors.primary}15` : colors.card,
-                                    alignItems: "center"
+                                    alignItems: "center",
+                                    justifyContent: "center",
                                 }}
                             >
-                                <Text style={{ color: network === "MTN" ? colors.primary : colors.foreground, fontWeight: "600", fontSize: 13 }}>MTN</Text>
+                                <Image
+                                    source={require("@/assets/images/mtn_logo.png")}
+                                    style={{ width: 64, height: 40 }}
+                                    resizeMode="contain"
+                                />
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() => setNetwork("VOD")}
                                 style={{
                                     flex: 1,
-                                    padding: 12,
+                                    paddingVertical: 10,
                                     borderRadius: 12,
-                                    borderWidth: 1,
+                                    borderWidth: 2,
                                     borderColor: network === "VOD" ? colors.primary : colors.border,
                                     backgroundColor: network === "VOD" ? `${colors.primary}15` : colors.card,
-                                    alignItems: "center"
+                                    alignItems: "center",
+                                    justifyContent: "center",
                                 }}
                             >
-                                <Text style={{ color: network === "VOD" ? colors.primary : colors.foreground, fontWeight: "600", fontSize: 13 }}>Telecel</Text>
+                                <Image
+                                    source={require("@/assets/images/telecel_logo.png")}
+                                    style={{ width: 64, height: 40 }}
+                                    resizeMode="contain"
+                                />
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() => setNetwork("ATL")}
                                 style={{
                                     flex: 1,
-                                    padding: 12,
+                                    paddingVertical: 10,
                                     borderRadius: 12,
-                                    borderWidth: 1,
+                                    borderWidth: 2,
                                     borderColor: network === "ATL" ? colors.primary : colors.border,
                                     backgroundColor: network === "ATL" ? `${colors.primary}15` : colors.card,
-                                    alignItems: "center"
+                                    alignItems: "center",
+                                    justifyContent: "center",
                                 }}
                             >
-                                <Text style={{ color: network === "ATL" ? colors.primary : colors.foreground, fontWeight: "600", fontSize: 13 }}>AirtelTigo</Text>
+                                <Image
+                                    source={require("@/assets/images/airteltigo_logo.png")}
+                                    style={{ width: 64, height: 40 }}
+                                    resizeMode="contain"
+                                />
                             </TouchableOpacity>
                         </View>
 
