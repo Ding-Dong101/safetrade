@@ -132,8 +132,8 @@ public class TradesController {
                 Optional<Users> sellerOpt = usersRepository.findById(UUID.fromString(trade.getSellerId()));
                 if (sellerOpt.isPresent()) {
                     Users seller = sellerOpt.get();
-                    sellerName = (seller.getFirstName() != null ? seller.getFirstName() : "")
-                            + (seller.getLastName() != null ? " " + seller.getLastName() : "");
+                    sellerName = (seller.getFirstname() != null ? seller.getFirstname() : "")
+                            + (seller.getLastname() != null ? " " + seller.getLastname() : "");
                     sellerName = sellerName.trim();
                     if (sellerName.isEmpty()) sellerName = seller.getUsername();
                 }
