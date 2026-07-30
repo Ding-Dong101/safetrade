@@ -117,6 +117,7 @@ export default function SignUp() {
                             label="First Name"
                             value={firstName}
                             onChangeText={setFirstName}
+                            placeholder="e.g. John"
                             containerStyle={{ flex: 1 }}
                             error={errors.firstName}
                         />
@@ -124,6 +125,7 @@ export default function SignUp() {
                             label="Last Name"
                             value={lastName}
                             onChangeText={setLastName}
+                            placeholder="e.g. Doe"
                             containerStyle={{ flex: 1 }}
                             error={errors.lastName}
                         />
@@ -133,6 +135,7 @@ export default function SignUp() {
                         label="Email / Phone Number"
                         value={emailOrPhone}
                         onChangeText={setEmailOrPhone}
+                        placeholder="e.g. john@email.com or 0241234567"
                         autoCapitalize="none"
                         autoCorrect={false}
                         keyboardType="email-address"
@@ -142,6 +145,7 @@ export default function SignUp() {
                         label="Username"
                         value={username}
                         onChangeText={setUsername}
+                        placeholder="Choose a username"
                         autoCapitalize="none"
                         autoCorrect={false}
                         error={errors.username}
@@ -150,6 +154,7 @@ export default function SignUp() {
                         label="Password"
                         value={password}
                         onChangeText={setPassword}
+                        placeholder="At least 6 characters"
                         secureTextEntry
                         error={errors.password}
                     />

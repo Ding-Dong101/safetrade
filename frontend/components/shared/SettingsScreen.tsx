@@ -22,28 +22,29 @@ interface SettingRowProps {
 
 const SettingRow = ({ icon, label, onPress, rightElement, danger, isLast }: SettingRowProps) => {
     const { colors, spacing } = useTheme();
-    const color = danger ? colors.danger : colors.foreground;
+    const color = danger ? "#ffffff" : colors.foreground;
 
     return (
         <TouchableOpacity
             onPress={onPress}
             disabled={!onPress}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
             style={{
                 flexDirection: "row",
                 alignItems: "center",
                 paddingVertical: spacing[4],
+                paddingHorizontal: spacing[5],
                 borderBottomWidth: isLast ? 0 : 1,
                 borderBottomColor: colors.border,
                 gap: spacing[3],
             }}
         >
-            <Ionicons name={icon} size={20} color={danger ? colors.danger : colors.muted} />
-            <Text style={{ flex: 1, color, fontSize: 15, fontWeight: "500" }}>
+            <Ionicons name={icon} size={20} color={danger ? "#ffffff" : colors.muted} />
+            <Text style={{ flex: 1, color, fontSize: 15, fontWeight: danger ? "700" : "500" }}>
                 {label}
             </Text>
             {rightElement ??
-                (onPress ? (
+                (onPress && !danger ? (
                     <Ionicons name="chevron-forward" size={18} color={colors.muted} />
                 ) : null)}
         </TouchableOpacity>
@@ -282,15 +283,27 @@ const SettingsScreen = () => {
                 />
             </Card>
 
-            <Card style={{ paddingVertical: 0 }}>
+            <TouchableOpacity
+                onPress={handleLogout}
+                activeOpacity={0.8}
+                style={{
+                    backgroundColor: colors.danger,
+                    borderRadius: 24,
+                    overflow: "hidden",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 8 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 24,
+                    elevation: 8,
+                }}
+            >
                 <SettingRow
                     icon="log-out-outline"
                     label="Log Out"
-                    onPress={handleLogout}
                     danger
                     isLast
                 />
-            </Card>
+            </TouchableOpacity>
 
             <View style={{ alignItems: "center", marginTop: spacing[2] }}>
                 <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>

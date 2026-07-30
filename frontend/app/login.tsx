@@ -100,6 +100,7 @@ export default function Login() {
                         label="Username"
                         value={username}
                         onChangeText={setUsername}
+                        placeholder="Enter your username"
                         autoCapitalize="none"
                         autoCorrect={false}
                         error={errors.username}
@@ -108,6 +109,7 @@ export default function Login() {
                         label="Password"
                         value={password}
                         onChangeText={setPassword}
+                        placeholder="Enter your password"
                         secureTextEntry
                         error={errors.password}
                     />

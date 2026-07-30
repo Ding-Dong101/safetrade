@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { useAuth } from "@/hooks/useAuth";
-import { getMessages, sendMessage as sendMessageRest, Message } from "@/services/messageService";
+import { getMessages, sendMessage as sendMessageRest, markMessagesRead, Message } from "@/services/messageService";
 
 const API_URL = "https://safetrade-or1w.onrender.com/api";
 const SOCKET_URL = API_URL.replace(/\/api\/?$/, "") + "/ws";
@@ -18,7 +18,11 @@ export const useChat = (tradeId: string) => {
 
         // Load existing history first (REST), then connect for live updates.
         getMessages(tradeId)
-            .then(setMessages)
+            .then((msgs) => {
+                setMessages(msgs);
+                // Mark any unread messages (sent by others) as read on open.
+                markMessagesRead(tradeId).catch(() => {});
+            })
             .catch((err) => console.error("Failed to load messages:", err));
 
         const client = new Client({
@@ -26,9 +30,19 @@ export const useChat = (tradeId: string) => {
             reconnectDelay: 3000,
             onConnect: () => {
                 setConnected(true);
+
+                // Subscribe to incoming new messages.
                 client.subscribe(`/topic/trade/${tradeId}`, (frame) => {
                     const newMessage: Message = JSON.parse(frame.body);
                     setMessages((prev) => [...prev, newMessage]);
+                    // Mark the newly arrived message as read immediately (recipient side).
+                    markMessagesRead(tradeId).catch(() => {});
+                });
+
+                // Subscribe to read-receipt broadcasts so sender's UI updates.
+                client.subscribe(`/topic/trade/${tradeId}/read`, (frame) => {
+                    const updatedMessages: Message[] = JSON.parse(frame.body);
+                    setMessages(updatedMessages);
                 });
             },
             onDisconnect: () => setConnected(false),
@@ -65,4 +79,4 @@ export const useChat = (tradeId: string) => {
     );
 
     return { messages, send, connected, currentUserId: user?.username };
-};
+};

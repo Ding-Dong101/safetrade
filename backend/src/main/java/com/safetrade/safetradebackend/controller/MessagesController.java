@@ -50,11 +50,18 @@ public class MessagesController {
             return ResponseEntity.status(401).build();
         }
         List<Message> messages = messagesRepository.findByTradeIdOrderBySentAtAsc(tradeId);
+        boolean anyUpdated = false;
         for (Message m : messages) {
             if (!m.getSenderId().equals(principal.getName()) && !m.isRead()) {
                 m.setRead(true);
                 messagesRepository.save(m);
+                anyUpdated = true;
             }
+        }
+        // Broadcast read receipts so the sender's client updates in real time.
+        if (anyUpdated) {
+            List<Message> updated = messagesRepository.findByTradeIdOrderBySentAtAsc(tradeId);
+            messagingTemplate.convertAndSend("/topic/trade/" + tradeId + "/read", updated);
         }
         return ResponseEntity.ok().build();
     }
