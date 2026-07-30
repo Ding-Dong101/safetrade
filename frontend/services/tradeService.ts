@@ -24,6 +24,12 @@ export const previewTradeByCode = async (code: string): Promise<TradePreview> =>
     const { data } = await api.get<TradePreview>(`/trades/preview/${code.trim()}`);
     return data;
 };
+
+/** Cancels a trade prior to IN_TRANSIT stage and triggers Paystack refund if funded. */
+export const cancelTrade = async (tradeId: string): Promise<Trade> => {
+    const { data } = await api.post<Trade>(`/trades/${tradeId}/cancel`);
+    return data;
+};
 // All trades regardless of who is party to them — used by rider and post portals.
 export const getAllTrades = async (): Promise<Trade[]> => {
     const { data } = await api.get<Trade[]>("/trades/?role=all");

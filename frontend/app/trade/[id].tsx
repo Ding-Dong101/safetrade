@@ -8,10 +8,11 @@ import * as ImagePicker from "expo-image-picker";
 import { useTheme } from "@/hooks/useTheme";
 import { useTrades } from "@/hooks/useTrades";
 import { useAuth } from "@/hooks/useAuth";
-import { depositFunds, verifyPayment, sellerUpload, buyerConfirmRiderDelivery } from "@/services/tradeService";
+import { depositFunds, verifyPayment, sellerUpload, buyerConfirmRiderDelivery, cancelTrade } from "@/services/tradeService";
 import * as Linking from "expo-linking";
 import Button from "@/components/ui/Button";
 import { useEffect, useState } from "react";
+import { ActivityIndicator } from "react-native";
 import ScreenHeader from "@/components/shared/ScreenHeader";
 import TradeStatusBadge from "@/components/trade/TradeStatusBadge";
 import TradeStatusBar from "@/components/trade/TradeStatusBar";
@@ -26,7 +27,7 @@ export default function TradeDetails() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const insets = useSafeAreaInsets();
     const { colors, spacing } = useTheme();
-    const { selectedTrade, isLoading, fetchTradeById } = useTrades();
+    const { selectedTrade, isLoading, fetchTradeById, refetch } = useTrades();
     const { user } = useAuth();
     const [isActing, setIsActing] = useState(false);
     const [riderCodeInput, setRiderCodeInput] = useState("");
@@ -36,6 +37,40 @@ export default function TradeDetails() {
     useEffect(() => {
         if (id) fetchTradeById(id);
     }, [id]);
+
+    const handleCancelTrade = () => {
+        if (!selectedTrade) return;
+        const isFunded = selectedTrade.status === "FUNDED" || selectedTrade.status === "DISPATCH_PENDING";
+        const msg = isFunded
+            ? "Are you sure you want to cancel this trade? Funds will be refunded to the buyer via Paystack."
+            : "Are you sure you want to cancel this trade?";
+
+        Alert.alert("Cancel Trade", msg, [
+            { text: "Keep Trade", style: "cancel" },
+            {
+                text: "Cancel Trade",
+                style: "destructive",
+                onPress: async () => {
+                    try {
+                        setIsActing(true);
+                        await cancelTrade(selectedTrade.id);
+                        await fetchTradeById(selectedTrade.id);
+                        await refetch();
+                        Alert.alert(
+                            "Trade Cancelled",
+                            isFunded
+                                ? "The trade has been cancelled and funds refunded to the buyer."
+                                : "The trade has been cancelled."
+                        );
+                    } catch (err: any) {
+                        Alert.alert("Cancel Failed", err?.response?.data ?? err?.message ?? "Please try again.");
+                    } finally {
+                        setIsActing(false);
+                    }
+                },
+            },
+        ]);
+    };
 
 
 
@@ -352,6 +387,42 @@ export default function TradeDetails() {
                             {selectedTrade.description}
                         </Text>
                     </Card>
+                )}
+
+                {/* Cancel Trade Button — Visible until IN_TRANSIT stage */}
+                {selectedTrade && ["CREATED", "PENDING", "FUNDED", "DISPATCH_PENDING"].includes(selectedTrade.status) && (
+                    <TouchableOpacity
+                        onPress={handleCancelTrade}
+                        disabled={isActing}
+                        activeOpacity={0.8}
+                        style={{
+                            backgroundColor: colors.danger,
+                            borderRadius: 24,
+                            paddingVertical: 16,
+                            paddingHorizontal: spacing[5],
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexDirection: "row",
+                            gap: 10,
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 8 },
+                            shadowOpacity: 0.08,
+                            shadowRadius: 24,
+                            elevation: 8,
+                            marginTop: spacing[2],
+                        }}
+                    >
+                        {isActing ? (
+                            <ActivityIndicator color="#ffffff" />
+                        ) : (
+                            <>
+                                <Ionicons name="close-circle-outline" size={20} color="#ffffff" />
+                                <Text style={{ color: "#ffffff", fontWeight: "700", fontSize: 16 }}>
+                                    Cancel Trade
+                                </Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
                 )}
             </ScrollView>
         </View>

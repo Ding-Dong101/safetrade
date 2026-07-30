@@ -8,11 +8,12 @@ import com.safetrade.safetradebackend.repository.UsersRepository;
 import com.safetrade.safetradebackend.service.EscrowService;
 import lombok.Data;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @CrossOrigin
 @RestController
@@ -31,6 +32,26 @@ public class TradesController {
         this.notificationService = notificationService;
     }
 
+    /** Automatically runs every 30 seconds to delete trades that have no buyer and are >5 minutes old. */
+    @Scheduled(fixedRate = 30000)
+    public void cleanUpExpiredTrades() {
+        try {
+            LocalDateTime cutoff = LocalDateTime.now().minusMinutes(5);
+            List<Trades> allTrades = tradesRepository.findAll();
+            List<Trades> expired = allTrades.stream()
+                    .filter(t -> (t.getBuyerId() == null || t.getBuyerId().isBlank())
+                            && t.getCreatedAt() != null
+                            && t.getCreatedAt().isBefore(cutoff))
+                    .collect(Collectors.toList());
+            if (!expired.isEmpty()) {
+                tradesRepository.deleteAll(expired);
+                System.out.println("[Trade Cleanup] Deleted " + expired.size() + " trade(s) created > 5 mins ago with no buyer.");
+            }
+        } catch (Exception e) {
+            System.err.println("[Trade Cleanup Error] " + e.getMessage());
+        }
+    }
+
     private void sendNotification(String userId, String type, String message) {
         if (userId == null || userId.isBlank()) return;
         try {
@@ -46,6 +67,7 @@ public class TradesController {
     @GetMapping("/")
     public List<Trades> getAll(@RequestHeader(value = "Authorization", required = false) String authHeader,
                                @RequestParam(value = "role", required = false) String role) {
+        cleanUpExpiredTrades();
         String userId = null;
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             userId = authHeader.substring(7).trim();
@@ -149,6 +171,45 @@ public class TradesController {
         preview.put("status", trade.getStatus());
 
         return ResponseEntity.ok(preview);
+    }
+
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelTrade(@PathVariable UUID id) {
+        Optional<Trades> optionalTrade = tradesRepository.findById(id);
+        if (optionalTrade.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Trades trade = optionalTrade.get();
+
+        TradeStatus currentStatus = trade.getStatus();
+        if (currentStatus == TradeStatus.IN_TRANSIT ||
+            currentStatus == TradeStatus.AT_POST ||
+            currentStatus == TradeStatus.DELIVERED ||
+            currentStatus == TradeStatus.RELEASED ||
+            currentStatus == TradeStatus.CLOSED ||
+            currentStatus == TradeStatus.REFUNDED) {
+            return ResponseEntity.badRequest().body("Trade cannot be cancelled once in transit or completed.");
+        }
+
+        boolean isFunded = (currentStatus == TradeStatus.FUNDED || currentStatus == TradeStatus.DISPATCH_PENDING);
+
+        if (isFunded) {
+            try {
+                escrowService.refundBuyer("trade_" + trade.getId());
+            } catch (Exception e) {
+                System.err.println("Paystack refund note: " + e.getMessage());
+            }
+            trade.setStatus(TradeStatus.REFUNDED);
+        } else {
+            trade.setStatus(TradeStatus.CLOSED);
+        }
+
+        Trades saved = tradesRepository.save(trade);
+
+        sendNotification(trade.getBuyerId(), "TRADE_CANCELLED", "Trade '" + trade.getTitle() + "' was cancelled.");
+        sendNotification(trade.getSellerId(), "TRADE_CANCELLED", "Trade '" + trade.getTitle() + "' was cancelled.");
+
+        return ResponseEntity.ok(saved);
     }
 
     @PostMapping("/{id}/join")
