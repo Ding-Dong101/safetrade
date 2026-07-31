@@ -57,6 +57,7 @@ public class Trades {
     private String releaseCode;  // ST-XXXXXX generated for Buyer pickup at Post
 
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private LocalDateTime riderPickedUpAt; // Used for 24-hour delivery SLA
     private LocalDateTime postArrivedAt;   // Used for 72-hour collection SLA
 }

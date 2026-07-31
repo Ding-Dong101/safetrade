@@ -205,6 +205,7 @@ public class TradesController {
             trade.setStatus(TradeStatus.CLOSED);
         }
 
+        trade.setUpdatedAt(LocalDateTime.now());
         Trades saved = tradesRepository.save(trade);
 
         sendNotification(trade.getBuyerId(), "TRADE_CANCELLED", "Trade '" + trade.getTitle() + "' was cancelled.");
