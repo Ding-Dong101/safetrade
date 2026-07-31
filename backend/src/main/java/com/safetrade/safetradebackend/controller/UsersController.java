@@ -3,6 +3,7 @@ package com.safetrade.safetradebackend.controller;
 import com.safetrade.safetradebackend.model.AuthResponse;
 import com.safetrade.safetradebackend.model.Users;
 import com.safetrade.safetradebackend.repository.UsersRepository;
+import com.safetrade.safetradebackend.service.EmailOtpService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -18,14 +19,47 @@ public class UsersController {
     private final UsersRepository usersRepository;
     private final com.safetrade.safetradebackend.security.JwtService jwtService;
     private final com.safetrade.safetradebackend.service.EscrowService escrowService;
+    private final EmailOtpService emailOtpService;
 
-    public UsersController(UsersRepository usersRepository, com.safetrade.safetradebackend.security.JwtService jwtService, com.safetrade.safetradebackend.service.EscrowService escrowService) {
+    public UsersController(UsersRepository usersRepository, com.safetrade.safetradebackend.security.JwtService jwtService, com.safetrade.safetradebackend.service.EscrowService escrowService, EmailOtpService emailOtpService) {
         this.usersRepository = usersRepository;
         this.jwtService = jwtService;
         this.escrowService = escrowService;
+        this.emailOtpService = emailOtpService;
+    }
+
+    /** Sends a 6-digit OTP to the provided email. Call this BEFORE account creation. */
+    @PostMapping("/otp/send")
+    public ResponseEntity<?> sendOtp(@RequestBody java.util.Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null || email.isBlank() || !email.contains("@")) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "A valid email address is required."));
+        }
+        try {
+            emailOtpService.sendOtp(email.trim().toLowerCase());
+            return ResponseEntity.ok(java.util.Map.of("message", "Verification code sent to " + email));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Verifies the OTP. Returns 200 if valid, 400 if wrong/expired. */
+    @PostMapping("/otp/verify")
+    public ResponseEntity<?> verifyOtp(@RequestBody java.util.Map<String, String> body) {
+        String email = body.get("email");
+        String otp   = body.get("otp");
+        if (email == null || otp == null) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "email and otp are required"));
+        }
+        boolean valid = emailOtpService.verifyOtp(email.trim().toLowerCase(), otp.trim());
+        if (valid) {
+            return ResponseEntity.ok(java.util.Map.of("verified", true));
+        }
+        return ResponseEntity.status(400).body(java.util.Map.of("error", "Invalid or expired verification code."));
     }
 
     @PostMapping("/register")
+
     public ResponseEntity<?> createUser(@RequestBody Users user) {
         for (Users existing : usersRepository.findAll()) {
             if (existing.getUsername() != null && existing.getUsername().equalsIgnoreCase(user.getUsername())) {

@@ -35,7 +35,14 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/v2/users/register", "/api/v2/users/login", "/api/users/register", "/api/users/login", "/api/auth/register", "/api/auth/login", "/error","/ws/**").permitAll()
+                .requestMatchers(
+                    "/api/v2/users/register", "/api/v2/users/login",
+                    "/api/users/register", "/api/users/login",
+                    "/api/auth/register", "/api/auth/login",
+                    "/api/auth/otp/send", "/api/auth/otp/verify",
+                    "/api/users/otp/send", "/api/users/otp/verify",
+                    "/error", "/ws/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

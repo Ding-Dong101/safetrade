@@ -47,3 +47,13 @@ export const updateBankDetails = async (details: {
     const { data } = await api.post("/users/bank-details", details);
     return data;
 };
+
+/** Sends a 6-digit OTP to the given email. Call before account creation. */
+export const sendSignupOtp = async (email: string): Promise<void> => {
+    await api.post("/auth/otp/send", { email });
+};
+
+/** Verifies the OTP entered by the user. Throws if invalid/expired. */
+export const verifySignupOtp = async (email: string, otp: string): Promise<void> => {
+    await api.post("/auth/otp/verify", { email, otp });
+};
