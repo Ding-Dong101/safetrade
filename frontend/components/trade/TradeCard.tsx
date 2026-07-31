@@ -36,7 +36,8 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
                 Alert.alert("Deposit Failed", "No payment link returned.");
             }
         } catch (err: any) {
-            Alert.alert("Deposit Failed", err?.response?.data ?? err?.message ?? "Please try again.");
+            const msg = typeof err?.response?.data === "string" ? err.response.data : (err?.message ?? "Please try again.");
+            Alert.alert("Deposit Failed", msg);
         } finally {
             setIsActing(false);
         }
@@ -53,7 +54,8 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
             Alert.alert("Receipt Confirmed", "You have successfully received the item. Funds are now released to the seller.");
             if (onPress) onPress(); // trigger a refresh or navigation
         } catch (err: any) {
-            Alert.alert("Verification Failed", err?.response?.data ?? err?.message ?? "Please try again.");
+            const msg = typeof err?.response?.data === "string" ? err.response.data : (err?.message ?? "Please try again.");
+            Alert.alert("Verification Failed", msg);
         } finally {
             setIsActing(false);
         }

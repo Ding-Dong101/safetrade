@@ -23,6 +23,14 @@ import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import { getUserById } from "@/services/userService";
 
+const getErrorMessage = (err: any): string => {
+    if (typeof err?.response?.data === "string") return err.response.data;
+    if (typeof err?.response?.data?.message === "string") return err.response.data.message;
+    if (typeof err?.response?.data?.error === "string") return err.response.data.error;
+    if (typeof err?.message === "string") return err.message;
+    return "An unexpected error occurred. Please try again.";
+};
+
 export default function TradeDetails() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const insets = useSafeAreaInsets();
@@ -63,7 +71,7 @@ export default function TradeDetails() {
                                 : "The trade has been cancelled."
                         );
                     } catch (err: any) {
-                        Alert.alert("Cancel Failed", err?.response?.data ?? err?.message ?? "Please try again.");
+                        Alert.alert("Cancel Failed", getErrorMessage(err));
                     } finally {
                         setIsActing(false);
                     }
@@ -71,8 +79,6 @@ export default function TradeDetails() {
             },
         ]);
     };
-
-
 
     useEffect(() => {
         if (!selectedTrade) return;
@@ -102,7 +108,7 @@ export default function TradeDetails() {
                 Alert.alert("Deposit Failed", "No payment link was returned. Please try again.");
             }
         } catch (err: any) {
-            Alert.alert("Deposit Failed", err?.response?.data ?? err?.message ?? "Please try again.");
+            Alert.alert("Deposit Failed", getErrorMessage(err));
         } finally {
             setIsActing(false);
         }
@@ -116,7 +122,7 @@ export default function TradeDetails() {
             Alert.alert("Escrow Funded", "Payment verified. The seller has been notified.");
             await fetchTradeById(selectedTrade.id);
         } catch (err: any) {
-            Alert.alert("Verification Failed", err?.response?.data ?? err?.message ?? "Please try again.");
+            Alert.alert("Verification Failed", getErrorMessage(err));
         } finally {
             setIsActing(false);
         }
@@ -144,7 +150,7 @@ export default function TradeDetails() {
             );
             await fetchTradeById(selectedTrade.id);
         } catch (err: any) {
-            Alert.alert("Upload Failed", err?.response?.data ?? err?.message ?? "Please try again.");
+            Alert.alert("Upload Failed", getErrorMessage(err));
         } finally {
             setIsActing(false);
         }
