@@ -14,8 +14,8 @@ export const formatTradeStatus = (status: string): string => {
         at_post: "At Post",
         delivered: "Delivered",
         released: "Released",
-        closed: "Closed",
-        refunded: "Refunded",
+        closed: "Cancelled",
+        refunded: "Cancelled",
     };
     return labels[lower] ?? formatStatusLabel(status);
 };

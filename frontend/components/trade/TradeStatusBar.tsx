@@ -27,6 +27,10 @@ const normalizeStatus = (s: string): string => {
 const TradeStatusBar = ({ status }: TradeStatusBarProps) => {
     const { colors } = useTheme();
     const normalized = normalizeStatus(status);
+    if (normalized === "CLOSED" || normalized === "REFUNDED" || normalized === "CANCELLED") {
+        return null;
+    }
+
     const currentIndex = STEPS.indexOf(normalized);
 
     return (

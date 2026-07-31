@@ -44,13 +44,15 @@ const Badge = ({ label, status, variant, style }: BadgeProps) => {
     const resolvedLabel = label ?? (status ? formatTradeStatus(status as any) : "");
     const { bg, text } = variantColors[resolvedVariant];
 
+    const isCancelled = normalizedStatus === "closed" || normalizedStatus === "refunded";
+
     return (
         <View
             style={[
                 {
                     backgroundColor: bg,
-                    paddingHorizontal: 10,
-                    paddingVertical: 4,
+                    paddingHorizontal: 12,
+                    paddingVertical: 5,
                     borderRadius: 20,
                     alignSelf: "flex-start",
                 },
@@ -61,7 +63,7 @@ const Badge = ({ label, status, variant, style }: BadgeProps) => {
                 style={{
                     color: text,
                     fontSize: 11,
-                    fontWeight: "600",
+                    fontWeight: isCancelled ? "700" : "600",
                 }}
             >
                 {resolvedLabel}

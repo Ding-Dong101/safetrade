@@ -182,10 +182,32 @@ const PortalHome = ({ role }: PortalHomeProps) => {
         processTopUp(amount);
     };
 
+    const [now, setNow] = useState(Date.now());
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setNow(Date.now());
+        }, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
     const ACTIVE_STATUSES = ["CREATED", "PENDING", "FUNDED", "DISPATCH_PENDING", "IN_TRANSIT", "AT_POST"];
-    const activeTrades = trades.filter((t) => ACTIVE_STATUSES.includes(t.status));
+    
+    const activeTrades = trades.filter((t) => {
+        if (ACTIVE_STATUSES.includes(t.status)) return true;
+        if (t.status === "CLOSED" || t.status === "REFUNDED") {
+            const timeStr = t.updatedAt ?? t.createdAt;
+            const updatedTime = timeStr ? new Date(timeStr).getTime() : 0;
+            // Keep visible in active trades section for 1 minute (60,000 ms) after being cancelled/closed
+            if (updatedTime > 0 && (now - updatedTime) < 60_000) {
+                return true;
+            }
+        }
+        return false;
+    });
+
     const escrowBalance = activeTrades
-        .filter((t) => t.status !== "CREATED" && t.status !== "PENDING")
+        .filter((t) => t.status !== "CREATED" && t.status !== "PENDING" && t.status !== "CLOSED" && t.status !== "REFUNDED")
         .reduce((sum, t) => sum + (t.price ?? 0), 0);
     const availableBalance = user?.balance ?? 0;
 
@@ -375,7 +397,7 @@ const PortalHome = ({ role }: PortalHomeProps) => {
                     )}
 
                     <FlatList
-                        data={trades}
+                        data={activeTrades}
                         keyExtractor={(item) => item.id}
                         refreshing={isRefreshing}
                         onRefresh={handleRefresh}

@@ -28,6 +28,7 @@ export interface Trade {
     riderId?: string;
     itemPhotoBase64?: string;
     createdAt: string;
+    updatedAt?: string;
     riderPickedUpAt?: string;
     postArrivedAt?: string;
 }
