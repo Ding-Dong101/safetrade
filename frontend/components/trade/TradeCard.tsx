@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Alert, Linking } from "react-native";
+import { View, Text, TouchableOpacity, Alert, Linking, Modal, Image, Pressable } from "react-native";
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
@@ -24,6 +24,8 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
     const { colors, spacing } = useTheme();
     const [isActing, setIsActing] = useState(false);
     const [riderCodeInput, setRiderCodeInput] = useState("");
+    const [showPhotoPreview, setShowPhotoPreview] = useState(false);
+
 
     const handleDeposit = async () => {
         try {
@@ -67,15 +69,68 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
     const pendingVerification = trade.status === "FUNDED";
 
     return (
-        <Card onPress={onPress} style={{ marginBottom: spacing[3] }}>
-            <View
-                style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: spacing[2],
-                }}
-            >
+
+              <Card onPress={onPress} style={{ marginBottom: spacing[3] }}>
+                  {trade.itemPhotoBase64 && (
+                      <>
+                          <TouchableOpacity
+                              onPress={() => setShowPhotoPreview(true)}
+                              activeOpacity={0.8}
+                              style={{
+                                  position: "absolute",
+                                  top: spacing[2],
+                                  right: spacing[2],
+                                  zIndex: 10,
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: 18,
+                                  overflow: "hidden",
+                                  borderWidth: 2,
+                                  borderColor: colors.background,
+                              }}
+                          >
+                              <Image
+                                  source={{ uri: `data:image/jpeg;base64,${trade.itemPhotoBase64}` }}
+                                  style={{ width: "100%", height: "100%" }}
+                                  resizeMode="cover"
+                              />
+                          </TouchableOpacity>
+
+                          <Modal
+                              visible={showPhotoPreview}
+                              transparent
+                              animationType="fade"
+                              onRequestClose={() => setShowPhotoPreview(false)}
+                          >
+                              <Pressable
+                                  onPress={() => setShowPhotoPreview(false)}
+                                  style={{
+                                      flex: 1,
+                                      backgroundColor: "rgba(0,0,0,0.85)",
+                                      justifyContent: "center",
+                                      alignItems: "center",
+                                  }}
+                              >
+                                  <Image
+                                      source={{ uri: `data:image/jpeg;base64,${trade.itemPhotoBase64}` }}
+                                      style={{ width: "85%", height: "60%" }}
+                                      resizeMode="contain"
+                                  />
+                              </Pressable>
+                          </Modal>
+                      </>
+                  )}
+
+                  <View
+                      style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: spacing[2],
+                      }}
+                  >
+
+
                 <Text
                     style={{
                         color: colors.foreground,
