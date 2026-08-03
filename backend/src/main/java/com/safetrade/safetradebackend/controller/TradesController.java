@@ -126,6 +126,7 @@ public class TradesController {
                 .price(request.getPrice())
                 .buyerId(buyerId)
                 .sellerId(request.getSellerId())
+                .itemPhotoBase64(request.getItemPhotoBase64())
                 .status(TradeStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .tradeCode(generateTradeCode())
@@ -164,14 +165,66 @@ public class TradesController {
         }
 
         java.util.Map<String, Object> preview = new java.util.LinkedHashMap<>();
+        preview.put("id", trade.getId());
         preview.put("tradeCode", trade.getTradeCode());
         preview.put("title", trade.getTitle());
         preview.put("description", trade.getDescription());
         preview.put("price", trade.getPrice());
+        preview.put("itemPhotoBase64", trade.getItemPhotoBase64());
+        preview.put("pickupLocation", trade.getPickupLocation());
         preview.put("sellerName", sellerName);
         preview.put("status", trade.getStatus());
+        preview.put("createdAt", trade.getCreatedAt());
 
         return ResponseEntity.ok(preview);
+    }
+
+    /** Returns open marketplace listings (created/pending without buyer) with seller details */
+    @GetMapping("/marketplace")
+    public List<java.util.Map<String, Object>> getMarketplaceListings() {
+        cleanUpExpiredTrades();
+        List<Trades> allTrades = tradesRepository.findAll();
+        List<java.util.Map<String, Object>> listings = new java.util.ArrayList<>();
+
+        // Fetch users map to efficiently resolve seller names
+        java.util.Map<String, String> userNames = new java.util.HashMap<>();
+        for (Users u : usersRepository.findAll()) {
+            String name = (u.getFirstname() != null ? u.getFirstname() : "")
+                    + (u.getLastname() != null ? " " + u.getLastname() : "");
+            name = name.trim();
+            if (name.isEmpty()) name = u.getUsername();
+            userNames.put(u.getId().toString(), name);
+        }
+
+        for (Trades t : allTrades) {
+            // Only list open trades available for buyers to join
+            if ((t.getStatus() == TradeStatus.CREATED || t.getStatus() == TradeStatus.PENDING) 
+                && (t.getBuyerId() == null || t.getBuyerId().trim().isEmpty())) {
+                
+                java.util.Map<String, Object> item = new java.util.LinkedHashMap<>();
+                item.put("id", t.getId());
+                item.put("tradeCode", t.getTradeCode());
+                item.put("title", t.getTitle());
+                item.put("description", t.getDescription());
+                item.put("price", t.getPrice());
+                item.put("itemPhotoBase64", t.getItemPhotoBase64());
+                item.put("pickupLocation", t.getPickupLocation());
+                item.put("sellerId", t.getSellerId());
+                item.put("sellerName", userNames.getOrDefault(t.getSellerId(), "Verified Seller"));
+                item.put("status", t.getStatus());
+                item.put("createdAt", t.getCreatedAt());
+                listings.add(item);
+            }
+        }
+        // Sort newest first
+        listings.sort((a, b) -> {
+            java.time.LocalDateTime t1 = (java.time.LocalDateTime) a.get("createdAt");
+            java.time.LocalDateTime t2 = (java.time.LocalDateTime) b.get("createdAt");
+            if (t1 == null || t2 == null) return 0;
+            return t2.compareTo(t1);
+        });
+
+        return listings;
     }
 
     @PostMapping("/{id}/cancel")
@@ -397,6 +450,10 @@ public class TradesController {
 
         trade.setRiderId(request.getRiderId());
         trade.setRiderPickedUpAt(LocalDateTime.now());
+
+        if (trade.getDropOffCode() == null) {
+            trade.setDropOffCode(generateCode());
+        }
 
         if (trade.getReleaseCode() == null) {
             String deliveryCode = generateCode();

@@ -51,6 +51,24 @@ public class Users {
     @Column
     private String paymentNetwork;
 
+    @Column
+    private String phone;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean isVerified = false;
+
+    @Column
+    private String idType; // e.g. "GHANA_CARD", "PASSPORT", "VOTER_ID"
+
+    @Column
+    private String idNumber;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean isRiderApproved = false;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean isPostApproved = false;
+
     @ManyToMany
     private List<Trades> trades;
 }

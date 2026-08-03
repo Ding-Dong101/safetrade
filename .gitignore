@@ -1,1 +1,9 @@
-﻿.env
+.env
+.env.local
+target/
+backend/target/
+node_modules/
+frontend/node_modules/
+.expo/
+*.log
+.DS_Store

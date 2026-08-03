@@ -11,6 +11,7 @@ import { formatCurrency } from "@/utils/formatCurrency";
 import { Role } from "@/types/auth";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import ShareDealModal from "./ShareDealModal";
 import { useState } from "react";
 import { depositFunds, buyerConfirmRiderDelivery } from "@/services/tradeService";
 
@@ -24,6 +25,7 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
     const { colors, spacing } = useTheme();
     const [isActing, setIsActing] = useState(false);
     const [riderCodeInput, setRiderCodeInput] = useState("");
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
     const handleDeposit = async () => {
         try {
@@ -99,27 +101,47 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
                     marginBottom: spacing[2],
                 }}
             >
-                <TouchableOpacity
-                    onPress={async () => {
-                        const codeToCopy = trade.tradeCode ?? trade.id;
-                        await Clipboard.setStringAsync(codeToCopy);
-                        Toast.show({ type: "info", text1: "Copied", text2: `Trade Code (${codeToCopy}) copied!` });
-                    }}
-                    activeOpacity={0.7}
-                    style={{ flexDirection: "row", alignItems: "center", gap: 4, flex: 1, marginRight: spacing[2] }}
-                >
-                    <Text
-                        style={{
-                            color: colors.muted,
-                            fontSize: 12,
-                            fontWeight: "400",
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1, marginRight: spacing[2] }}>
+                    <TouchableOpacity
+                        onPress={async () => {
+                            const codeToCopy = trade.tradeCode ?? trade.id;
+                            await Clipboard.setStringAsync(codeToCopy);
+                            Toast.show({ type: "info", text1: "Copied", text2: `Trade Code (${codeToCopy}) copied!` });
                         }}
-                        numberOfLines={1}
+                        activeOpacity={0.7}
+                        style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
                     >
-                        Trade Code: {trade.tradeCode ?? trade.id}
-                    </Text>
-                    <Ionicons name="copy-outline" size={13} color={colors.muted} />
-                </TouchableOpacity>
+                        <Text
+                            style={{
+                                color: colors.muted,
+                                fontSize: 12,
+                                fontWeight: "400",
+                            }}
+                            numberOfLines={1}
+                        >
+                            Code: {trade.tradeCode ?? trade.id}
+                        </Text>
+                        <Ionicons name="copy-outline" size={13} color={colors.muted} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => setIsShareModalOpen(true)}
+                        activeOpacity={0.7}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        style={{
+                            backgroundColor: `${colors.primary}15`,
+                            paddingHorizontal: 6,
+                            paddingVertical: 2,
+                            borderRadius: 6,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 3,
+                        }}
+                    >
+                        <Ionicons name="share-social-outline" size={12} color={colors.primary} />
+                        <Text style={{ color: colors.primary, fontSize: 10, fontWeight: "700" }}>Share</Text>
+                    </TouchableOpacity>
+                </View>
 
                 <Text
                     style={{
@@ -253,6 +275,14 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
             )}
 
             <TradeStatusBar status={trade.status} />
+
+            <ShareDealModal
+                visible={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)}
+                title={trade.title}
+                price={trade.price}
+                tradeCode={trade.tradeCode ?? trade.id}
+            />
         </Card>
     );
 };

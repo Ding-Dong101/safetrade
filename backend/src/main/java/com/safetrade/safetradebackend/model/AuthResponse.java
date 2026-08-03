@@ -35,5 +35,10 @@ public class AuthResponse {
         private String paymentName;
         private String paymentNumber;
         private String paymentNetwork;
+        private boolean isVerified;
+        private String idType;
+        private String idNumber;
+        private boolean isRiderApproved;
+        private boolean isPostApproved;
     }
 }

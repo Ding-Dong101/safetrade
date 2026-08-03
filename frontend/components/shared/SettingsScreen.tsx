@@ -8,7 +8,7 @@ import Card from "@/components/ui/Card";
 import Avatar from "@/components/ui/Avatar";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
-import { updateBankDetails } from "@/services/authService";
+import { updateBankDetails, verifyAccount } from "@/services/authService";
 import Toast from "react-native-toast-message";
 
 interface SettingRowProps {
@@ -55,7 +55,7 @@ const SettingsScreen = () => {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { colors, spacing, isDark, toggleTheme } = useTheme();
-    const { user, token, logout, setUser } = useAuth();
+    const { user, token, logout, setUser, updateUser } = useAuth();
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
     const fullName =
@@ -67,11 +67,42 @@ const SettingsScreen = () => {
     const [network, setNetwork] = useState(user?.paymentNetwork || "MTN"); // MTN or VOD (Telecel)
     const [isSavingBank, setIsSavingBank] = useState(false);
 
+    // Identity Verification state
+    const [isVerifyModalVisible, setVerifyModalVisible] = useState(false);
+    const [idType, setIdType] = useState(user?.idType || "GHANA_CARD");
+    const [idNumber, setIdNumber] = useState(user?.idNumber || "");
+    const [isSubmittingVerify, setIsSubmittingVerify] = useState(false);
+
     useEffect(() => {
         setSellerName(user?.paymentName || "");
         setPhoneNumber(user?.paymentNumber || "");
         setNetwork(user?.paymentNetwork || "MTN");
+        setIdType(user?.idType || "GHANA_CARD");
+        setIdNumber(user?.idNumber || "");
     }, [user]);
+
+    const handleVerifyIdentity = async () => {
+        if (!idNumber.trim()) {
+            Alert.alert("Required", "Please enter your ID number.");
+            return;
+        }
+        setIsSubmittingVerify(true);
+        try {
+            const response = await verifyAccount({
+                idType,
+                idNumber: idNumber.trim(),
+            });
+            if (response.user) {
+                updateUser(response.user);
+            }
+            Toast.show({ type: "success", text1: "Identity Verified!", text2: "Your account is now verified." });
+            setVerifyModalVisible(false);
+        } catch (error: any) {
+            Alert.alert("Verification Error", error?.response?.data?.error || error.message || "Failed to verify identity");
+        } finally {
+            setIsSubmittingVerify(false);
+        }
+    };
 
     const handleSaveBankDetails = async () => {
         if (!sellerName || !phoneNumber) {
@@ -197,16 +228,24 @@ const SettingsScreen = () => {
                     </TouchableOpacity>
 
                     <View style={{ flex: 1 }}>
-                        <Text
-                            style={{
-                                color: colors.foreground,
-                                fontSize: 17,
-                                fontWeight: "700",
-                            }}
-                            numberOfLines={1}
-                        >
-                            {fullName ?? "Guest"}
-                        </Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                            <Text
+                                style={{
+                                    color: colors.foreground,
+                                    fontSize: 17,
+                                    fontWeight: "700",
+                                }}
+                                numberOfLines={1}
+                            >
+                                {fullName ?? "Guest"}
+                            </Text>
+                            {user?.isVerified ? (
+                                <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: `${colors.success}20`, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10, gap: 3 }}>
+                                    <Ionicons name="checkmark-circle" size={13} color={colors.success} />
+                                    <Text style={{ color: colors.success, fontSize: 10, fontWeight: "700" }}>Verified</Text>
+                                </View>
+                            ) : null}
+                        </View>
                         {user?.email ? (
                             <Text
                                 style={{ color: colors.muted, fontSize: 13, marginTop: 2 }}
@@ -256,27 +295,34 @@ const SettingsScreen = () => {
                     }
                 />
                 <SettingRow
+                    icon="shield-checkmark-outline"
+                    label={user?.isVerified ? "Account Verified (Ghana Card / ID)" : "Verify Identity & Account"}
+                    onPress={() => setVerifyModalVisible(true)}
+                    rightElement={
+                        user?.isVerified ? (
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                                <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+                                <Text style={{ color: colors.success, fontSize: 12, fontWeight: "700" }}>Active</Text>
+                            </View>
+                        ) : (
+                            <View style={{ backgroundColor: `${colors.info}20`, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 }}>
+                                <Text style={{ color: colors.info, fontSize: 11, fontWeight: "700" }}>Verify</Text>
+                            </View>
+                        )
+                    }
+                />
+                <SettingRow
                     icon="card-outline"
                     label="Payment Details (Mobile Money)"
                     onPress={() => setBankModalVisible(true)}
                 />
                 <SettingRow
-                    icon="shield-checkmark-outline"
+                    icon="lock-closed-outline"
                     label="Privacy and Security"
                     onPress={() =>
                         Alert.alert(
                             "Privacy and Security",
                             "Manage your password, two-factor authentication and data preferences here soon."
-                        )
-                    }
-                />
-                <SettingRow
-                    icon="help-circle-outline"
-                    label="Help and Support"
-                    onPress={() =>
-                        Alert.alert(
-                            "Help and Support",
-                            "Reach us at support@safetrade.com or visit the FAQ."
                         )
                     }
                     isLast
@@ -300,6 +346,7 @@ const SettingsScreen = () => {
                 <SettingRow
                     icon="log-out-outline"
                     label="Log Out"
+                    onPress={handleLogout}
                     danger
                     isLast
                 />
@@ -311,7 +358,102 @@ const SettingsScreen = () => {
                 </Text>
             </View>
 
-            <Modal visible={isBankModalVisible} animationType="slide" transparent>
+            {/* Account Verification Modal */}
+            <Modal
+                visible={isVerifyModalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setVerifyModalVisible(false)}
+            >
+                <KeyboardAvoidingView 
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}
+                >
+                    <View style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing[6], maxHeight: "85%" }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing[4] }}>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                                <Ionicons name="shield-checkmark" size={24} color={colors.primary} />
+                                <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: "700" }}>Account Verification</Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setVerifyModalVisible(false)}>
+                                <Ionicons name="close" size={24} color={colors.muted} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={{ color: colors.muted, marginBottom: 16, fontSize: 13, lineHeight: 18 }}>
+                            Verify your identity to increase trade security and unlock higher escrow transaction limits.
+                        </Text>
+
+                        <Text style={{ color: colors.muted, marginBottom: 8, fontSize: 14, fontWeight: "600" }}>Select ID Document</Text>
+                        <View style={{ flexDirection: "row", gap: 8, marginBottom: spacing[4] }}>
+                            {[
+                                { key: "GHANA_CARD", label: "Ghana Card" },
+                                { key: "PASSPORT", label: "Passport" },
+                                { key: "VOTER_ID", label: "Voter ID" },
+                            ].map((doc) => (
+                                <TouchableOpacity
+                                    key={doc.key}
+                                    onPress={() => setIdType(doc.key)}
+                                    style={{
+                                        flex: 1,
+                                        paddingVertical: 10,
+                                        borderRadius: 12,
+                                        borderWidth: 2,
+                                        borderColor: idType === doc.key ? colors.primary : colors.border,
+                                        backgroundColor: idType === doc.key ? `${colors.primary}15` : colors.card,
+                                        alignItems: "center",
+                                    }}
+                                >
+                                    <Text style={{ color: idType === doc.key ? colors.primary : colors.foreground, fontSize: 12, fontWeight: "700" }}>
+                                        {doc.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        <Text style={{ color: colors.muted, marginBottom: 8, fontSize: 14, fontWeight: "600" }}>ID Document Number</Text>
+                        <TextInput
+                            value={idNumber}
+                            onChangeText={setIdNumber}
+                            placeholder={idType === "GHANA_CARD" ? "GHA-123456789-0" : "Enter document ID"}
+                            placeholderTextColor={colors.muted}
+                            autoCapitalize="characters"
+                            style={{
+                                backgroundColor: colors.card,
+                                color: colors.foreground,
+                                padding: 16,
+                                borderRadius: 12,
+                                marginBottom: spacing[6],
+                                borderWidth: 1,
+                                borderColor: colors.border,
+                                fontSize: 15,
+                            }}
+                        />
+
+                        <TouchableOpacity 
+                            onPress={handleVerifyIdentity} 
+                            disabled={isSubmittingVerify}
+                            style={{ backgroundColor: colors.primary, padding: 16, borderRadius: 12, alignItems: "center" }}
+                        >
+                            {isSubmittingVerify ? (
+                                <ActivityIndicator color={colors.background} />
+                            ) : (
+                                <Text style={{ color: colors.background, fontWeight: "700", fontSize: 16 }}>
+                                    {user?.isVerified ? "Update Verification" : "Submit Verification"}
+                                </Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
+
+            {/* Mobile Money Payment Modal */}
+            <Modal
+                visible={isBankModalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setBankModalVisible(false)}
+            >
                 <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.5)" }}>
                     <View style={{ backgroundColor: colors.background, padding: spacing[6], borderTopLeftRadius: 24, borderTopRightRadius: 24 }}>
                         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing[6] }}>

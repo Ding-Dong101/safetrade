@@ -3,12 +3,30 @@ import { Role } from "@/types/auth";
 import api from "@/services/api";
 
 export interface TradePreview {
+    id?: string;
     tradeCode: string;
     title: string;
     description?: string;
     price: number;
     sellerName: string;
     status: string;
+    itemPhotoBase64?: string;
+    pickupLocation?: string;
+    createdAt?: string;
+}
+
+export interface MarketplaceItem {
+    id: string;
+    tradeCode: string;
+    title: string;
+    description?: string;
+    price: number;
+    itemPhotoBase64?: string;
+    pickupLocation?: string;
+    sellerId: string;
+    sellerName: string;
+    status: string;
+    createdAt?: string;
 }
 
 // Real trade service backed by the Spring Boot API (/api/trades).
@@ -16,6 +34,18 @@ export interface TradePreview {
 export const getTrades = async (role: Role): Promise<Trade[]> => {
     const query = role === "buyer" || role === "seller" ? `?role=${role}` : "";
     const { data } = await api.get<Trade[]>(`/trades/${query}`);
+    return data;
+};
+
+/** Fetches open marketplace listings for public browsing. */
+export const getMarketplaceListings = async (): Promise<MarketplaceItem[]> => {
+    const { data } = await api.get<MarketplaceItem[]>("/trades/marketplace");
+    return data;
+};
+
+/** Joins an open trade directly by its trade ID. */
+export const joinTradeById = async (tradeId: string): Promise<Trade> => {
+    const { data } = await api.post<Trade>(`/trades/${tradeId}/join`);
     return data;
 };
 

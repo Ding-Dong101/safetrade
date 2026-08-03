@@ -58,6 +58,8 @@ public class EndpointsIntegrationTest {
 
         // Mock external service responses
         when(escrowService.fundEscrow(any(), any(), any())).thenReturn("mock_success");
+        when(escrowService.verifyPayment(any())).thenReturn(true);
+        when(escrowService.verifyTopUpPayment(any(), any())).thenReturn(100.0);
         when(escrowService.releaseFunds(any(), any(), any())).thenReturn("mock_success");
         when(escrowService.refundBuyer(any())).thenReturn("mock_success");
         doNothing().when(notificationService).sendPushNotification(any(), any(), any());
@@ -131,10 +133,10 @@ public class EndpointsIntegrationTest {
                 .andExpect(jsonPath("$[0].username").value("testuser"));
 
         // 6. Topup
-        mockMvc.perform(post("/api/v2/users/topup")
+        mockMvc.perform(post("/api/v2/users/topup/verify")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"amount\": 100.0}"))
+                        .content("{\"reference\": \"topup_10000_12345\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.balance").value(100.0));
 
@@ -181,6 +183,11 @@ public class EndpointsIntegrationTest {
 
         // deposit
         mockMvc.perform(post("/api/trades/" + tradeId + "/deposit")
+                        .header("Authorization", "Bearer " + buyerToken))
+                .andExpect(status().isOk());
+
+        // verify payment
+        mockMvc.perform(post("/api/trades/" + tradeId + "/verify-payment")
                         .header("Authorization", "Bearer " + buyerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("FUNDED"));
@@ -233,7 +240,7 @@ public class EndpointsIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(collectReq)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("RELEASED"));
+                .andExpect(jsonPath("$.status").value("CLOSED"));
 
         // Get trades
         mockMvc.perform(get("/api/trades/")
@@ -316,5 +323,29 @@ public class EndpointsIntegrationTest {
                         .content("{\"userId\":\"123\", \"type\":\"INFO\", \"message\":\"Test Message\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("success"));
+    }
+
+    @Test
+    void testPaystackWebhook() throws Exception {
+        Users buyer = createAndSaveUser("hookbuyer");
+        Users seller = createAndSaveUser("hookseller");
+
+        Trades trade = new Trades();
+        trade.setTitle("Webhook Test");
+        trade.setPrice(150.0);
+        trade.setBuyerId(buyer.getId().toString());
+        trade.setSellerId(seller.getId().toString());
+        trade.setStatus(com.safetrade.safetradebackend.model.TradeStatus.PENDING);
+        trade = tradesRepository.save(trade);
+
+        String webhookJson = "{\"event\":\"charge.success\",\"data\":{\"reference\":\"trade_" + trade.getId() + "\",\"amount\":15000,\"customer\":{\"email\":\"hookbuyer@test.com\"}}}";
+
+        mockMvc.perform(post("/api/webhooks/paystack")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(webhookJson))
+                .andExpect(status().isOk());
+
+        Trades updated = tradesRepository.findById(trade.getId()).orElseThrow();
+        org.junit.jupiter.api.Assertions.assertEquals(com.safetrade.safetradebackend.model.TradeStatus.FUNDED, updated.getStatus());
     }
 }

@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import { useAuthStore } from "@/store/authStore";
 
-const BASE_URL = "https://safetrade-or1w.onrender.com/api";
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://safetrade-or1w.onrender.com/api";
  
 const request = async <T = any>(
     method: string,

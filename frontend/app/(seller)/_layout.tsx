@@ -6,6 +6,7 @@ export default function SellerLayout() {
             role="seller"
             tabs={[
                 { name: "home", title: "Home", icon: "home" },
+                { name: "marketplace", title: "Explore", icon: "storefront" },
                 { name: "create", title: "Create Trade", icon: "add-circle" },
                 { name: "messages", title: "Messages", icon: "chatbox-ellipses" },
                 { name: "settings", title: "Settings", icon: "settings" },

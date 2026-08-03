@@ -11,6 +11,7 @@ import BalanceCardSkeleton from "@/components/home/BalanceCardSkeleton";
 import TradeCard from "@/components/trade/TradeCard";
 import TradeCardSkeleton from "@/components/trade/TradeCardSkeleton";
 import EmptyState from "@/components/shared/EmptyState";
+import SafeTradeTrustCenter from "@/components/home/SafeTradeTrustCenter";
 import { MOCK_USER } from "@/constants/data";
 import { Trade } from "@/types/trade";
 import { useEffect, useRef, useState } from "react";
@@ -418,6 +419,7 @@ const PortalHome = ({ role }: PortalHomeProps) => {
                                 }
                             />
                         }
+                        ListFooterComponent={<SafeTradeTrustCenter role={role} />}
                         contentContainerStyle={{
                             paddingHorizontal: spacing[5],
                             paddingBottom: insets.bottom + 140,

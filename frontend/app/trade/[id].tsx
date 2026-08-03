@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Alert, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, Alert, TouchableOpacity, Image, Modal } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
@@ -21,6 +21,7 @@ import { formatCurrency } from "@/utils/formatCurrency";
 import { formatDateTime } from "@/utils/formatDate";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
+import ShareDealModal from "@/components/trade/ShareDealModal";
 import { getUserById } from "@/services/userService";
 
 const getErrorMessage = (err: any): string => {
@@ -41,9 +42,18 @@ export default function TradeDetails() {
     const [riderCodeInput, setRiderCodeInput] = useState("");
     const [buyerName, setBuyerName] = useState<string>("");
     const [sellerName, setSellerName] = useState<string>("");
+    const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
     useEffect(() => {
-        if (id) fetchTradeById(id);
+        if (!id) return;
+        fetchTradeById(id);
+
+        const interval = setInterval(() => {
+            fetchTradeById(id);
+        }, 6000);
+
+        return () => clearInterval(interval);
     }, [id]);
 
     const handleCancelTrade = () => {
@@ -211,25 +221,74 @@ export default function TradeDetails() {
 
                 {/* Amount */}
                 <Card>
-                    <Text
-                        style={{
-                            color: colors.muted,
-                            fontSize: 13,
-                            marginBottom: spacing[1],
-                        }}
-                    >
-                        Amount
-                    </Text>
-                    <Text
-                        style={{
-                            color: colors.primary,
-                            fontSize: 28,
-                            fontWeight: "700",
-                        }}
-                    >
-                        {formatCurrency(selectedTrade.price)}
-                    </Text>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                        <View>
+                            <Text
+                                style={{
+                                    color: colors.muted,
+                                    fontSize: 13,
+                                    marginBottom: spacing[1],
+                                }}
+                            >
+                                Amount
+                            </Text>
+                            <Text
+                                style={{
+                                    color: colors.primary,
+                                    fontSize: 28,
+                                    fontWeight: "700",
+                                }}
+                            >
+                                {formatCurrency(selectedTrade.price)}
+                            </Text>
+                        </View>
+
+                        <TouchableOpacity
+                            onPress={() => setIsShareModalOpen(true)}
+                            activeOpacity={0.8}
+                            style={{
+                                backgroundColor: `${colors.primary}18`,
+                                borderWidth: 1,
+                                borderColor: colors.primary,
+                                paddingHorizontal: 12,
+                                paddingVertical: 8,
+                                borderRadius: 12,
+                                flexDirection: "row",
+                                alignItems: "center",
+                                gap: 6,
+                            }}
+                        >
+                            <Ionicons name="share-social-outline" size={16} color={colors.primary} />
+                            <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "700" }}>
+                                Share Deal
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 </Card>
+
+                {/* 100% Escrow Guarantee Badge Card */}
+                <View
+                    style={{
+                        backgroundColor: `${colors.primary}10`,
+                        borderWidth: 1,
+                        borderColor: `${colors.primary}35`,
+                        borderRadius: 16,
+                        padding: spacing[3],
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 10,
+                    }}
+                >
+                    <Ionicons name="shield-checkmark" size={22} color={colors.primary} />
+                    <View style={{ flex: 1 }}>
+                        <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "700" }}>
+                            SafeTrade Escrow Guaranteed
+                        </Text>
+                        <Text style={{ color: colors.muted, fontSize: 11, marginTop: 1 }}>
+                            Funds remain securely locked until physical delivery inspection is approved.
+                        </Text>
+                    </View>
+                </View>
 
                 {/* Details */}
                 <Card style={{ gap: spacing[3] }}>
@@ -285,6 +344,69 @@ export default function TradeDetails() {
                         </View>
                     ))}
                 </Card>
+
+                {/* Verified Item Photo Card */}
+                {selectedTrade.itemPhotoBase64 ? (
+                    <Card>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing[3] }}>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                                <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+                                <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "700" }}>
+                                    Verified Item Photo
+                                </Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setIsPhotoModalOpen(true)}>
+                                <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "600" }}>View Full</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => setIsPhotoModalOpen(true)}
+                            activeOpacity={0.9}
+                            style={{ borderRadius: 12, overflow: "hidden", backgroundColor: colors.background }}
+                        >
+                            <Image
+                                source={{
+                                    uri: selectedTrade.itemPhotoBase64.startsWith("data:")
+                                        ? selectedTrade.itemPhotoBase64
+                                        : `data:image/jpeg;base64,${selectedTrade.itemPhotoBase64}`,
+                                }}
+                                style={{ width: "100%", height: 180, borderRadius: 12 }}
+                                resizeMode="cover"
+                            />
+                        </TouchableOpacity>
+                    </Card>
+                ) : null}
+
+                {/* Full Screen Photo Modal */}
+                <Modal
+                    visible={isPhotoModalOpen}
+                    transparent={true}
+                    animationType="fade"
+                    onRequestClose={() => setIsPhotoModalOpen(false)}
+                >
+                    <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.9)", justifyContent: "center", alignItems: "center", padding: 20 }}>
+                        <TouchableOpacity
+                            onPress={() => setIsPhotoModalOpen(false)}
+                            style={{ position: "absolute", top: insets.top + 16, right: 20, zIndex: 10, padding: 8 }}
+                        >
+                            <Ionicons name="close-circle" size={36} color="#ffffff" />
+                        </TouchableOpacity>
+                        {selectedTrade.itemPhotoBase64 && (
+                            <Image
+                                source={{
+                                    uri: selectedTrade.itemPhotoBase64.startsWith("data:")
+                                        ? selectedTrade.itemPhotoBase64
+                                        : `data:image/jpeg;base64,${selectedTrade.itemPhotoBase64}`,
+                                }}
+                                style={{ width: "100%", height: "70%", borderRadius: 16 }}
+                                resizeMode="contain"
+                            />
+                        )}
+                        <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, marginTop: 16, textAlign: "center" }}>
+                            Condition verified at dispatch
+                        </Text>
+                    </View>
+                </Modal>
 
                 {/* Next action for the current role */}
                 {isBuyer &&
@@ -431,6 +553,14 @@ export default function TradeDetails() {
                     </TouchableOpacity>
                 )}
             </ScrollView>
+
+            <ShareDealModal
+                visible={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)}
+                title={selectedTrade.title}
+                price={selectedTrade.price}
+                tradeCode={(selectedTrade as any).tradeCode ?? selectedTrade.id}
+            />
         </View>
     );
 }

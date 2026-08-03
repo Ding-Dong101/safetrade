@@ -41,6 +41,7 @@ public class SecurityConfig {
                     "/api/auth/register", "/api/auth/login",
                     "/api/auth/otp/send", "/api/auth/otp/verify",
                     "/api/users/otp/send", "/api/users/otp/verify",
+                    "/api/webhooks/**", "/api/v2/webhooks/**",
                     "/error", "/ws/**"
                 ).permitAll()
                 .anyRequest().authenticated()

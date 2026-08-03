@@ -23,4 +23,8 @@ public class PaystackConfig {
         headers.setBearerAuth(secretKey);
         return headers;
     }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
 }

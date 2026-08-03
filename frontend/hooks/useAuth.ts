@@ -3,7 +3,7 @@ import { login, logout, register } from "@/services/authService";
 import { LoginCredentials, RegisterCredentials } from "@/types/auth";
 
 export const useAuth = () => {
-    const { user, token, isLoggedIn, isLoading, setUser, clearUser, setLoading } =
+    const { user, token, isLoggedIn, isLoading, setUser, updateUser, clearUser, setLoading } =
         useAuthStore();
 
     const handleLogin = async (credentials: LoginCredentials) => {
@@ -57,5 +57,6 @@ export const useAuth = () => {
         register: handleRegister,
         logout: handleLogout,
         setUser,
+        updateUser,
     };
 };

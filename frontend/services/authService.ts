@@ -29,6 +29,7 @@ export const register = async (
         firstname: credentials.firstName,
         lastname: credentials.lastName,
         email: credentials.email,
+        phone: credentials.phone,
         password: credentials.password,
     });
 
@@ -48,7 +49,24 @@ export const updateBankDetails = async (details: {
     return data;
 };
 
-/** Sends a 6-digit OTP to the given email. Call before account creation. */
+/** Submits account verification details (Ghana Card, Passport, etc.). */
+export const verifyAccount = async (details: {
+    idType: string;
+    idNumber: string;
+}): Promise<{ message: string; user: User }> => {
+    const { data } = await api.post("/users/verify-account", details);
+    return data;
+};
+
+/** Requests access/approval for Rider or Post role. */
+export const requestRoleApproval = async (
+    role: "rider" | "post"
+): Promise<{ message: string; user: User }> => {
+    const { data } = await api.post("/users/request-role", { role });
+    return data;
+};
+
+/** Sends a 6-digit OTP to the given email or phone. Call before account creation. */
 export const sendSignupOtp = async (email: string): Promise<void> => {
     await api.post("/auth/otp/send", { email });
 };

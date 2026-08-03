@@ -168,6 +168,47 @@ export default function AcceptTrade() {
                         isLoading={isPreviewing}
                     />
                 </Card>
+
+                {/* Marketplace Discovery Banner */}
+                <TouchableOpacity
+                    onPress={() => router.push("/(buyer)/marketplace" as any)}
+                    activeOpacity={0.8}
+                >
+                    <Card
+                        style={{
+                            padding: spacing[4],
+                            borderRadius: 18,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 12,
+                            backgroundColor: `${colors.primary}10`,
+                            borderWidth: 1,
+                            borderColor: `${colors.primary}30`,
+                        }}
+                    >
+                        <View
+                            style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 12,
+                                backgroundColor: colors.primary,
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
+                            <Ionicons name="storefront" size={22} color={colors.background} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "700" }}>
+                                Browse SafeTrade Marketplace
+                            </Text>
+                            <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
+                                Don't have a code? Discover verified listings and buy with 1-tap escrow.
+                            </Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color={colors.primary} />
+                    </Card>
+                </TouchableOpacity>
             </ScrollView>
 
             {/* ── Trade Preview Modal (fade-in) ── */}

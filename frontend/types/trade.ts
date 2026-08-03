@@ -39,6 +39,7 @@ export interface CreateTradePayload {
     pickupLocation?: string;
     price: number;
     sellerId: string;
+    itemPhotoBase64?: string;
 }
 
 export interface UpdateTradeStatusPayload {

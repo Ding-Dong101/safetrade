@@ -12,6 +12,11 @@ export interface User {
     paymentName?: string;
     paymentNumber?: string;
     paymentNetwork?: string;
+    isVerified?: boolean;
+    idType?: string;
+    idNumber?: string;
+    isRiderApproved?: boolean;
+    isPostApproved?: boolean;
 }
 
 export interface LoginCredentials {

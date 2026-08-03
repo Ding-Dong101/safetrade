@@ -7,6 +7,8 @@ import com.safetrade.safetradebackend.service.EmailOtpService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @CrossOrigin
@@ -75,12 +77,16 @@ public class UsersController {
         newUser.setFirstname(user.getFirstname());
         newUser.setLastname(user.getLastname());
         newUser.setPassword(user.getPassword());
+        newUser.setPhone(user.getPhone());
         if (user.getEmail() == null || user.getEmail().isEmpty()) {
             newUser.setEmail(user.getUsername() + "@phone.local");
         } else {
             newUser.setEmail(user.getEmail());
         }
         newUser.setBalance(0.0);
+        newUser.setIsVerified(false);
+        newUser.setIsRiderApproved(false);
+        newUser.setIsPostApproved(false);
 
         try {
             Users saved = usersRepository.save(newUser);
@@ -213,6 +219,66 @@ public class UsersController {
         return ResponseEntity.notFound().build();
     }
 
+    /** Submits identity verification (e.g., Ghana Card, Passport). */
+    @PostMapping("/verify-account")
+    public ResponseEntity<?> verifyAccount(@RequestBody java.util.Map<String, String> body, java.security.Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body(java.util.Map.of("error", "Unauthorized"));
+        }
+        String idType = body.get("idType");
+        String idNumber = body.get("idNumber");
+
+        if (idType == null || idNumber == null || idType.isBlank() || idNumber.isBlank()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "idType and idNumber are required"));
+        }
+
+        Optional<Users> userOpt = usersRepository.findByUsername(principal.getName());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Users user = userOpt.get();
+        user.setIdType(idType.trim().toUpperCase());
+        user.setIdNumber(idNumber.trim());
+        user.setIsVerified(true);
+        usersRepository.save(user);
+
+        return ResponseEntity.ok(java.util.Map.of(
+            "message", "Account verified successfully",
+            "user", buildAuthResponse(user).getUser()
+        ));
+    }
+
+    /** Request approval to access Rider or Post portals. */
+    @PostMapping("/request-role")
+    public ResponseEntity<?> requestRole(@RequestBody java.util.Map<String, String> body, java.security.Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body(java.util.Map.of("error", "Unauthorized"));
+        }
+        String targetRole = body.get("role");
+        if (targetRole == null || (!targetRole.equalsIgnoreCase("rider") && !targetRole.equalsIgnoreCase("post"))) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Role must be 'rider' or 'post'"));
+        }
+
+        Optional<Users> userOpt = usersRepository.findByUsername(principal.getName());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Users user = userOpt.get();
+        if (targetRole.equalsIgnoreCase("rider")) {
+            user.setIsRiderApproved(true);
+        } else {
+            user.setIsPostApproved(true);
+        }
+        usersRepository.save(user);
+
+        return ResponseEntity.ok(java.util.Map.of(
+            "message", "Role " + targetRole + " approved",
+            "user", buildAuthResponse(user).getUser()
+        ));
+    }
+
     private AuthResponse buildAuthResponse(Users user) {
         org.springframework.security.core.userdetails.UserDetails userDetails = 
             org.springframework.security.core.userdetails.User.withUsername(user.getUsername())
@@ -228,11 +294,17 @@ public class UsersController {
                 .lastName(user.getLastname())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .phone(user.getPhone())
                 .isAdmin(false)
                 .balance(user.getBalance())
                 .paymentName(user.getPaymentName())
                 .paymentNumber(user.getPaymentNumber())
                 .paymentNetwork(user.getPaymentNetwork())
+                .isVerified(Boolean.TRUE.equals(user.getIsVerified()))
+                .idType(user.getIdType())
+                .idNumber(user.getIdNumber())
+                .isRiderApproved(Boolean.TRUE.equals(user.getIsRiderApproved()))
+                .isPostApproved(Boolean.TRUE.equals(user.getIsPostApproved()))
                 .createdAt(java.time.LocalDateTime.now().toString())
                 .build();
 
