@@ -33,6 +33,7 @@ export default function SignUp() {
     const [emailOrPhone, setEmailOrPhone] = useState("");
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [optedRole, setOptedRole] = useState<"buyer" | "seller" | "rider" | "both">("buyer");
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // OTP flow state
@@ -43,6 +44,11 @@ export default function SignUp() {
     const [otpError, setOtpError] = useState("");
     const [resendCooldown, setResendCooldown] = useState(0);
     const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // Role Credentials Success Modal
+    const [credentialsModalVisible, setCredentialsModalVisible] = useState(false);
+    const [assignedSellerCode, setAssignedSellerCode] = useState<string | null>(null);
+    const [assignedRiderCode, setAssignedRiderCode] = useState<string | null>(null);
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scaleAnim = useRef(new Animated.Value(0.88)).current;
@@ -160,15 +166,25 @@ export default function SignUp() {
             email: isEmail ? emailOrPhone.trim() : "",
             phone: isEmail ? undefined : emailOrPhone.trim(),
             password,
+            optedRole,
         });
 
         if (result.success) {
-            Toast.show({
-                type: "success",
-                text1: "Account Created",
-                text2: "You can now log in with your details.",
-                onHide: () => router.replace("/login"),
-            });
+            const returnedUser = (result as any).user;
+            const hasRoleCodes = optedRole !== "buyer" || returnedUser?.sellerCode || returnedUser?.riderCode;
+
+            if (hasRoleCodes) {
+                setAssignedSellerCode(returnedUser?.sellerCode ?? (optedRole === "seller" || optedRole === "both" ? "SEL-ACTIVE" : null));
+                setAssignedRiderCode(returnedUser?.riderCode ?? (optedRole === "rider" || optedRole === "both" ? "RDR-ACTIVE" : null));
+                setCredentialsModalVisible(true);
+            } else {
+                Toast.show({
+                    type: "success",
+                    text1: "Account Created",
+                    text2: "You can now log in with your details.",
+                    onHide: () => router.replace("/login"),
+                });
+            }
         } else {
             Toast.show({
                 type: "error",
@@ -177,6 +193,37 @@ export default function SignUp() {
             });
         }
     };
+
+    const rolesList = [
+        {
+            id: "buyer",
+            title: "Buyer Only",
+            desc: "Browse marketplace & buy safely with Escrow",
+            icon: "cart-outline",
+            tag: "Standard",
+        },
+        {
+            id: "seller",
+            title: "Seller Account",
+            desc: "Create escrow trades & sell products",
+            icon: "storefront-outline",
+            tag: "Seller Code",
+        },
+        {
+            id: "rider",
+            title: "Dispatch Rider",
+            desc: "Accept deliveries & earn per dispatch",
+            icon: "bicycle-outline",
+            tag: "Rider Code",
+        },
+        {
+            id: "both",
+            title: "Seller & Rider",
+            desc: "Unlock both Seller & Rider portals",
+            icon: "flash-outline",
+            tag: "Dual Code",
+        },
+    ] as const;
 
     return (
         <>
@@ -193,8 +240,8 @@ export default function SignUp() {
                         style={{
                             alignItems: "center",
                             justifyContent: "center",
-                            paddingTop: insets.top + spacing[12],
-                            paddingBottom: spacing[12],
+                            paddingTop: insets.top + spacing[10],
+                            paddingBottom: spacing[8],
                         }}
                     >
                         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginBottom: spacing[2] }}>
@@ -217,7 +264,7 @@ export default function SignUp() {
                             borderTopLeftRadius: 40,
                             borderTopRightRadius: 40,
                             paddingHorizontal: spacing[6],
-                            paddingTop: spacing[10],
+                            paddingTop: spacing[8],
                             paddingBottom: insets.bottom + spacing[6],
                             shadowColor: "#000",
                             shadowOffset: { width: 0, height: -4 },
@@ -272,6 +319,109 @@ export default function SignUp() {
                             secureTextEntry
                             error={errors.password}
                         />
+
+                        {/* Account Portal Option Selector */}
+                        <View style={{ marginBottom: spacing[4], marginTop: spacing[1] }}>
+                            <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "700", marginBottom: spacing[2] }}>
+                                I want to join SafeTrade as:
+                            </Text>
+                            <View style={{ gap: spacing[2] }}>
+                                {rolesList.map((item) => {
+                                    const isSelected = optedRole === item.id;
+                                    return (
+                                        <TouchableOpacity
+                                            key={item.id}
+                                            activeOpacity={0.8}
+                                            onPress={() => setOptedRole(item.id)}
+                                            style={{
+                                                flexDirection: "row",
+                                                alignItems: "center",
+                                                padding: spacing[3],
+                                                borderRadius: 14,
+                                                borderWidth: 1.5,
+                                                borderColor: isSelected ? colors.primary : colors.border,
+                                                backgroundColor: isSelected ? `${colors.primary}12` : colors.card,
+                                            }}
+                                        >
+                                            <View
+                                                style={{
+                                                    width: 36,
+                                                    height: 36,
+                                                    borderRadius: 18,
+                                                    backgroundColor: isSelected ? colors.primary : colors.cardAlt,
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    marginRight: spacing[3],
+                                                }}
+                                            >
+                                                <Ionicons
+                                                    name={item.icon as any}
+                                                    size={18}
+                                                    color={isSelected ? "#fff" : colors.muted}
+                                                />
+                                            </View>
+                                            <View style={{ flex: 1 }}>
+                                                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                                                    <Text
+                                                        style={{
+                                                            color: isSelected ? colors.primary : colors.foreground,
+                                                            fontSize: 14,
+                                                            fontWeight: "700",
+                                                        }}
+                                                    >
+                                                        {item.title}
+                                                    </Text>
+                                                    <View
+                                                        style={{
+                                                            backgroundColor: isSelected ? `${colors.primary}25` : colors.cardAlt,
+                                                            paddingHorizontal: 6,
+                                                            paddingVertical: 2,
+                                                            borderRadius: 6,
+                                                        }}
+                                                    >
+                                                        <Text
+                                                            style={{
+                                                                color: isSelected ? colors.primary : colors.muted,
+                                                                fontSize: 10,
+                                                                fontWeight: "700",
+                                                            }}
+                                                        >
+                                                            {item.tag}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+                                                <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
+                                                    {item.desc}
+                                                </Text>
+                                            </View>
+                                            <View
+                                                style={{
+                                                    width: 20,
+                                                    height: 20,
+                                                    borderRadius: 10,
+                                                    borderWidth: 2,
+                                                    borderColor: isSelected ? colors.primary : colors.border,
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    marginLeft: spacing[2],
+                                                }}
+                                            >
+                                                {isSelected && (
+                                                    <View
+                                                        style={{
+                                                            width: 10,
+                                                            height: 10,
+                                                            borderRadius: 5,
+                                                            backgroundColor: colors.primary,
+                                                        }}
+                                                    />
+                                                )}
+                                            </View>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        </View>
 
                         <Button
                             label="Create Account"
@@ -438,6 +588,130 @@ export default function SignUp() {
                             </TouchableOpacity>
                         </View>
                     </Animated.View>
+                </View>
+            </Modal>
+
+            {/* Role Activation Code Credentials Modal */}
+            <Modal
+                visible={credentialsModalVisible}
+                transparent
+                animationType="fade"
+                statusBarTranslucent
+                onRequestClose={() => {
+                    setCredentialsModalVisible(false);
+                    router.replace("/login");
+                }}
+            >
+                <View
+                    style={{
+                        flex: 1,
+                        backgroundColor: "rgba(0,0,0,0.65)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        paddingHorizontal: spacing[5],
+                    }}
+                >
+                    <View
+                        style={{
+                            backgroundColor: colors.background,
+                            borderRadius: 28,
+                            width: "100%",
+                            padding: spacing[6],
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 16 },
+                            shadowOpacity: 0.2,
+                            shadowRadius: 32,
+                            elevation: 20,
+                        }}
+                    >
+                        <View style={{ alignItems: "center", marginBottom: spacing[4] }}>
+                            <View
+                                style={{
+                                    width: 56,
+                                    height: 56,
+                                    borderRadius: 28,
+                                    backgroundColor: `${colors.primary}20`,
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    marginBottom: spacing[3],
+                                }}
+                            >
+                                <Ionicons name="key" size={28} color={colors.primary} />
+                            </View>
+                            <Text style={{ color: colors.foreground, fontSize: 22, fontWeight: "800", textAlign: "center" }}>
+                                Welcome to SafeTrade!
+                            </Text>
+                            <Text style={{ color: colors.muted, fontSize: 13, textAlign: "center", marginTop: 4, lineHeight: 18 }}>
+                                Your account has been created. The Buyer portal is active for everyone. Your role activation codes are below:
+                            </Text>
+                        </View>
+
+                        {assignedSellerCode && (
+                            <View
+                                style={{
+                                    backgroundColor: colors.card,
+                                    borderRadius: 16,
+                                    padding: spacing[4],
+                                    marginBottom: spacing[3],
+                                    borderWidth: 1,
+                                    borderColor: colors.border,
+                                }}
+                            >
+                                <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700", textTransform: "uppercase" }}>
+                                    💼 Seller Activation Code
+                                </Text>
+                                <Text style={{ color: colors.primary, fontSize: 22, fontWeight: "800", letterSpacing: 2, marginTop: 4 }}>
+                                    {assignedSellerCode}
+                                </Text>
+                                <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>
+                                    Use in Settings to unlock or switch to the Seller Portal.
+                                </Text>
+                            </View>
+                        )}
+
+                        {assignedRiderCode && (
+                            <View
+                                style={{
+                                    backgroundColor: colors.card,
+                                    borderRadius: 16,
+                                    padding: spacing[4],
+                                    marginBottom: spacing[3],
+                                    borderWidth: 1,
+                                    borderColor: colors.border,
+                                }}
+                            >
+                                <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700", textTransform: "uppercase" }}>
+                                    🏍️ Rider Activation Code
+                                </Text>
+                                <Text style={{ color: colors.primary, fontSize: 22, fontWeight: "800", letterSpacing: 2, marginTop: 4 }}>
+                                    {assignedRiderCode}
+                                </Text>
+                                <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>
+                                    Use in Settings to unlock or switch to the Dispatch Rider Portal.
+                                </Text>
+                            </View>
+                        )}
+
+                        <TouchableOpacity
+                            activeOpacity={0.85}
+                            onPress={() => {
+                                setCredentialsModalVisible(false);
+                                router.replace("/login");
+                            }}
+                            style={{
+                                backgroundColor: colors.primary,
+                                borderRadius: 14,
+                                paddingVertical: 15,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginTop: spacing[3],
+                            }}
+                        >
+                            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
+                                Continue to Login
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </Modal>
         </>

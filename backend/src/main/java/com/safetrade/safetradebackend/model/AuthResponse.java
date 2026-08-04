@@ -38,7 +38,11 @@ public class AuthResponse {
         private boolean isVerified;
         private String idType;
         private String idNumber;
+        private boolean isSellerApproved;
         private boolean isRiderApproved;
         private boolean isPostApproved;
+        private String sellerCode;
+        private String riderCode;
+        private String postCode;
     }
 }

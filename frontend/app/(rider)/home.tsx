@@ -13,7 +13,6 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
-import PortalSwitcher from "@/components/home/PortalSwitcher";
 import EmptyState from "@/components/shared/EmptyState";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { useTheme } from "@/hooks/useTheme";
@@ -260,7 +259,20 @@ export default function RiderHome() {
                     >
                         Hello {user?.firstName ?? MOCK_USER.name},
                     </Text>
-                    <PortalSwitcher role="rider" />
+                    <View
+                        style={{
+                            backgroundColor: colors.primary + "18",
+                            paddingHorizontal: 12,
+                            paddingVertical: 5,
+                            borderRadius: 16,
+                            borderWidth: 1,
+                            borderColor: colors.primary + "30",
+                        }}
+                    >
+                        <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "700" }}>
+                            Rider Portal
+                        </Text>
+                    </View>
                 </View>
 
                 <Button

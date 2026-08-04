@@ -15,8 +15,12 @@ export interface User {
     isVerified?: boolean;
     idType?: string;
     idNumber?: string;
+    isSellerApproved?: boolean;
     isRiderApproved?: boolean;
     isPostApproved?: boolean;
+    sellerCode?: string;
+    riderCode?: string;
+    postCode?: string;
 }
 
 export interface LoginCredentials {
@@ -31,6 +35,11 @@ export interface RegisterCredentials {
     email: string;
     phone?: string;
     password: string;
+    optedRole?: "buyer" | "seller" | "rider" | "both";
+    isSellerApproved?: boolean;
+    isRiderApproved?: boolean;
+    sellerCode?: string;
+    riderCode?: string;
 }
 
 export interface AuthResponse {

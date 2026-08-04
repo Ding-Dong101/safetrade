@@ -14,7 +14,6 @@ import { Ionicons } from "@expo/vector-icons";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
-import PortalSwitcher from "@/components/home/PortalSwitcher";
 import EmptyState from "@/components/shared/EmptyState";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { useTheme } from "@/hooks/useTheme";
@@ -279,7 +278,20 @@ export default function PostHome() {
                         marginBottom: spacing[3],
                     }}
                 >
-                    <PortalSwitcher role="post" />
+                    <View
+                        style={{
+                            backgroundColor: colors.info + "18",
+                            paddingHorizontal: 12,
+                            paddingVertical: 5,
+                            borderRadius: 16,
+                            borderWidth: 1,
+                            borderColor: colors.info + "30",
+                        }}
+                    >
+                        <Text style={{ color: colors.info, fontSize: 12, fontWeight: "700" }}>
+                            SafeTrade Post Portal
+                        </Text>
+                    </View>
                 </View>
 
                 {/* Blue banner header, per the Post Operator design */}

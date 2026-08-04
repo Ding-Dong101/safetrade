@@ -3,12 +3,11 @@ import {
     LoginCredentials,
     RegisterCredentials,
     User,
+    Role,
 } from "@/types/auth";
 import api from "@/services/api";
 
 // Real auth service backed by the Spring Boot API (/api/users).
-// Backend returns: { token, userId, name, user: { id, firstName, lastName, username, email, isAdmin, balance, createdAt } }
-
 export const login = async (
     credentials: LoginCredentials
 ): Promise<AuthResponse> => {
@@ -23,7 +22,15 @@ export const login = async (
 export const register = async (
     credentials: RegisterCredentials
 ): Promise<AuthResponse> => {
-    // Backend Users entity uses lowercase field names (firstname/lastname).
+    // Generate role activation codes if opted in
+    const isSeller = credentials.optedRole === "seller" || credentials.optedRole === "both";
+    const isRider = credentials.optedRole === "rider" || credentials.optedRole === "both";
+
+    const rand1 = Math.floor(1000 + Math.random() * 9000);
+    const rand2 = Math.floor(1000 + Math.random() * 9000);
+    const sellerCode = isSeller ? `SEL-${rand1}` : undefined;
+    const riderCode = isRider ? `RDR-${rand2}` : undefined;
+
     const { data } = await api.post("/users/register", {
         username: credentials.username,
         firstname: credentials.firstName,
@@ -31,9 +38,22 @@ export const register = async (
         email: credentials.email,
         phone: credentials.phone,
         password: credentials.password,
+        isSellerApproved: isSeller,
+        isRiderApproved: isRider,
+        sellerCode,
+        riderCode,
     });
 
-    return { user: data.user, token: data.token };
+    // Ensure frontend User object retains the assigned codes
+    const user: User = {
+        ...data.user,
+        isSellerApproved: isSeller || data.user?.isSellerApproved,
+        isRiderApproved: isRider || data.user?.isRiderApproved,
+        sellerCode: data.user?.sellerCode || sellerCode,
+        riderCode: data.user?.riderCode || riderCode,
+    };
+
+    return { user, token: data.token };
 };
 
 export const logout = async (): Promise<void> => {
@@ -58,9 +78,18 @@ export const verifyAccount = async (details: {
     return data;
 };
 
-/** Requests access/approval for Rider or Post role. */
+/** Unlocks a portal role (seller, rider, post) using an authorization code. */
+export const unlockRoleWithCode = async (
+    role: "seller" | "rider" | "post",
+    code: string
+): Promise<{ message: string; user: User }> => {
+    const { data } = await api.post("/users/unlock-role", { role, code });
+    return data;
+};
+
+/** Requests access/approval for a role. */
 export const requestRoleApproval = async (
-    role: "rider" | "post"
+    role: "seller" | "rider" | "post"
 ): Promise<{ message: string; user: User }> => {
     const { data } = await api.post("/users/request-role", { role });
     return data;

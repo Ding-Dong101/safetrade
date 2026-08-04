@@ -1,5 +1,18 @@
 import { useState, useEffect } from "react";
-import { View, Text, ScrollView, Switch, TouchableOpacity, Alert, Platform, Modal, TextInput, KeyboardAvoidingView, ActivityIndicator, Image } from "react-native";
+import {
+    View,
+    Text,
+    ScrollView,
+    Switch,
+    TouchableOpacity,
+    Alert,
+    Platform,
+    Modal,
+    TextInput,
+    KeyboardAvoidingView,
+    ActivityIndicator,
+    Image,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -8,7 +21,9 @@ import Card from "@/components/ui/Card";
 import Avatar from "@/components/ui/Avatar";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
-import { updateBankDetails, verifyAccount } from "@/services/authService";
+import { useRole } from "@/hooks/useRole";
+import { updateBankDetails, verifyAccount, unlockRoleWithCode } from "@/services/authService";
+import { Role } from "@/types/auth";
 import Toast from "react-native-toast-message";
 
 interface SettingRowProps {
@@ -56,15 +71,17 @@ const SettingsScreen = () => {
     const insets = useSafeAreaInsets();
     const { colors, spacing, isDark, toggleTheme } = useTheme();
     const { user, token, logout, setUser, updateUser } = useAuth();
+    const { activeRole, switchRole } = useRole();
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
     const fullName =
         [user?.firstName, user?.lastName].filter(Boolean).join(" ") || user?.username;
 
+    // Mobile money state
     const [isBankModalVisible, setBankModalVisible] = useState(false);
     const [sellerName, setSellerName] = useState(user?.paymentName || "");
     const [phoneNumber, setPhoneNumber] = useState(user?.paymentNumber || "");
-    const [network, setNetwork] = useState(user?.paymentNetwork || "MTN"); // MTN or VOD (Telecel)
+    const [network, setNetwork] = useState(user?.paymentNetwork || "MTN");
     const [isSavingBank, setIsSavingBank] = useState(false);
 
     // Identity Verification state
@@ -72,6 +89,13 @@ const SettingsScreen = () => {
     const [idType, setIdType] = useState(user?.idType || "GHANA_CARD");
     const [idNumber, setIdNumber] = useState(user?.idNumber || "");
     const [isSubmittingVerify, setIsSubmittingVerify] = useState(false);
+
+    // Role code unlocking state
+    const [isCodeModalVisible, setCodeModalVisible] = useState(false);
+    const [targetUnlockRole, setTargetUnlockRole] = useState<"seller" | "rider" | "post" | null>(null);
+    const [roleCodeInput, setRoleCodeInput] = useState("");
+    const [isUnlocking, setIsUnlocking] = useState(false);
+    const [isCodesViewModalVisible, setIsCodesViewModalVisible] = useState(false);
 
     useEffect(() => {
         setSellerName(user?.paymentName || "");
@@ -173,6 +197,111 @@ const SettingsScreen = () => {
         }
     };
 
+    const handleSwitchToPortal = (role: Role) => {
+        if (role === activeRole) return;
+
+        // Verify authorization
+        if (role === "seller" && !user?.isSellerApproved) {
+            setTargetUnlockRole("seller");
+            setRoleCodeInput(user?.sellerCode || "");
+            setCodeModalVisible(true);
+            return;
+        }
+        if (role === "rider" && !user?.isRiderApproved) {
+            setTargetUnlockRole("rider");
+            setRoleCodeInput(user?.riderCode || "");
+            setCodeModalVisible(true);
+            return;
+        }
+        if (role === "post" && !user?.isPostApproved) {
+            setTargetUnlockRole("post");
+            setRoleCodeInput("");
+            setCodeModalVisible(true);
+            return;
+        }
+
+        // Unlocked and authorized — switch immediately
+        switchRole(role);
+        router.replace(`/${role === "buyer" ? "(buyer)/home" : role === "seller" ? "(seller)/home" : role === "rider" ? "(rider)/home" : "(post)/home"}`);
+    };
+
+    const handleUnlockRoleWithCode = async () => {
+        if (!targetUnlockRole || !roleCodeInput.trim()) {
+            Alert.alert("Required", "Please enter your portal access code.");
+            return;
+        }
+
+        setIsUnlocking(true);
+        try {
+            const response = await unlockRoleWithCode(targetUnlockRole, roleCodeInput.trim());
+            if (response.user) {
+                updateUser(response.user);
+            }
+            setCodeModalVisible(false);
+            const roleToSwitch = targetUnlockRole;
+            setTargetUnlockRole(null);
+            setRoleCodeInput("");
+
+            Toast.show({
+                type: "success",
+                text1: "Portal Unlocked!",
+                text2: `Switched to ${roleToSwitch.toUpperCase()} portal.`,
+            });
+
+            switchRole(roleToSwitch);
+            router.replace(`/${roleToSwitch === "seller" ? "(seller)/home" : roleToSwitch === "rider" ? "(rider)/home" : "(post)/home"}`);
+        } catch (err: any) {
+            const msg =
+                err?.response?.data?.error ||
+                err?.message ||
+                "Invalid code for this portal. Please check and try again.";
+            Alert.alert("Unlock Failed", msg);
+        } finally {
+            setIsUnlocking(false);
+        }
+    };
+
+    const portalsList: {
+        role: Role;
+        name: string;
+        desc: string;
+        icon: keyof typeof Ionicons.glyphMap;
+        isUnlocked: boolean;
+        assignedCode?: string;
+    }[] = [
+        {
+            role: "buyer",
+            name: "Buyer Portal",
+            desc: "Browse market & secure escrow orders",
+            icon: "cart",
+            isUnlocked: true, // Always unlocked for all users
+        },
+        {
+            role: "seller",
+            name: "Seller Portal",
+            desc: "Create trades & receive buyer payments",
+            icon: "storefront",
+            isUnlocked: Boolean(user?.isSellerApproved),
+            assignedCode: user?.sellerCode,
+        },
+        {
+            role: "rider",
+            name: "Dispatch Rider Portal",
+            desc: "Pick up orders & complete deliveries",
+            icon: "bicycle",
+            isUnlocked: Boolean(user?.isRiderApproved),
+            assignedCode: user?.riderCode,
+        },
+        {
+            role: "post",
+            name: "SafeTrade Post Portal",
+            desc: "Safe point parcel verification & pickup",
+            icon: "business",
+            isUnlocked: Boolean(user?.isPostApproved),
+            assignedCode: user?.postCode,
+        },
+    ];
+
     return (
         <ScrollView
             style={{ flex: 1, backgroundColor: colors.background }}
@@ -194,6 +323,7 @@ const SettingsScreen = () => {
                 Settings
             </Text>
 
+            {/* Profile Card */}
             <Card>
                 <View
                     style={{
@@ -269,6 +399,105 @@ const SettingsScreen = () => {
                 </View>
             </Card>
 
+            {/* Portal Switcher & Access Control Card */}
+            <Card>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing[3] }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                        <Ionicons name="layers-outline" size={20} color={colors.primary} />
+                        <Text style={{ color: colors.foreground, fontSize: 16, fontWeight: "700" }}>
+                            Portals & Role Access
+                        </Text>
+                    </View>
+                    <TouchableOpacity
+                        onPress={() => setIsCodesViewModalVisible(true)}
+                        style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${colors.primary}18`, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}
+                    >
+                        <Ionicons name="key-outline" size={13} color={colors.primary} />
+                        <Text style={{ color: colors.primary, fontSize: 11, fontWeight: "700" }}>My Codes</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <Text style={{ color: colors.muted, fontSize: 12, marginBottom: spacing[3], lineHeight: 16 }}>
+                    Buyer portal is open to everyone. Unlock and switch to Seller, Dispatch Rider, or SafeTrade Post portals with your authorization code.
+                </Text>
+
+                <View style={{ gap: spacing[2] }}>
+                    {portalsList.map((p) => {
+                        const isActive = activeRole === p.role;
+                        return (
+                            <TouchableOpacity
+                                key={p.role}
+                                activeOpacity={0.8}
+                                onPress={() => handleSwitchToPortal(p.role)}
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    padding: spacing[3],
+                                    borderRadius: 14,
+                                    borderWidth: isActive ? 2 : 1,
+                                    borderColor: isActive ? colors.primary : colors.border,
+                                    backgroundColor: isActive ? `${colors.primary}10` : colors.cardAlt,
+                                }}
+                            >
+                                <View
+                                    style={{
+                                        width: 38,
+                                        height: 38,
+                                        borderRadius: 12,
+                                        backgroundColor: isActive ? colors.primary : p.isUnlocked ? `${colors.primary}20` : `${colors.muted}20`,
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        marginRight: spacing[3],
+                                    }}
+                                >
+                                    <Ionicons
+                                        name={p.icon}
+                                        size={20}
+                                        color={isActive ? "#fff" : p.isUnlocked ? colors.primary : colors.muted}
+                                    />
+                                </View>
+
+                                <View style={{ flex: 1 }}>
+                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                                        <Text
+                                            style={{
+                                                color: isActive ? colors.primary : colors.foreground,
+                                                fontSize: 14,
+                                                fontWeight: "700",
+                                            }}
+                                        >
+                                            {p.name}
+                                        </Text>
+                                        {isActive && (
+                                            <View style={{ backgroundColor: colors.primary, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                                                <Text style={{ color: "#fff", fontSize: 9, fontWeight: "800" }}>ACTIVE</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
+                                        {p.desc}
+                                    </Text>
+                                </View>
+
+                                {isActive ? (
+                                    <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                                ) : p.isUnlocked ? (
+                                    <View style={{ backgroundColor: `${colors.primary}20`, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 }}>
+                                        <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "700" }}>Switch</Text>
+                                    </View>
+                                ) : (
+                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${colors.muted}20`, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 10 }}>
+                                        <Ionicons name="lock-closed" size={12} color={colors.muted} />
+                                        <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>Unlock</Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            </Card>
+
+            {/* General Preferences Card */}
             <Card style={{ paddingVertical: 0 }}>
                 <SettingRow
                     icon={isDark ? "moon" : "sunny"}
@@ -329,6 +558,7 @@ const SettingsScreen = () => {
                 />
             </Card>
 
+            {/* Logout Button */}
             <TouchableOpacity
                 onPress={handleLogout}
                 activeOpacity={0.8}
@@ -357,6 +587,141 @@ const SettingsScreen = () => {
                     SafeTrade v1.0.0
                 </Text>
             </View>
+
+            {/* Role Code Unlock Modal */}
+            <Modal
+                visible={isCodeModalVisible}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setCodeModalVisible(false)}
+            >
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", paddingHorizontal: spacing[5] }}
+                >
+                    <View style={{ backgroundColor: colors.background, borderRadius: 24, padding: spacing[6], shadowColor: "#000", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.2, shadowRadius: 32, elevation: 20 }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing[4] }}>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${colors.primary}20`, alignItems: "center", justifyContent: "center" }}>
+                                    <Ionicons name="key" size={20} color={colors.primary} />
+                                </View>
+                                <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: "700" }}>
+                                    Unlock {targetUnlockRole?.toUpperCase()} Portal
+                                </Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setCodeModalVisible(false)}>
+                                <Ionicons name="close" size={24} color={colors.muted} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={{ color: colors.muted, marginBottom: spacing[4], fontSize: 13, lineHeight: 18 }}>
+                            {targetUnlockRole === "post"
+                                ? "Enter your designated SafeTrade Post Officer Key (e.g. POST-GH26 or Station Key) to authorize access."
+                                : `Enter the ${targetUnlockRole} activation code generated during your registration to unlock this portal.`}
+                        </Text>
+
+                        <Text style={{ color: colors.muted, marginBottom: 6, fontSize: 13, fontWeight: "600" }}>
+                            Access / Activation Code
+                        </Text>
+                        <TextInput
+                            value={roleCodeInput}
+                            onChangeText={setRoleCodeInput}
+                            placeholder={targetUnlockRole === "post" ? "e.g. POST-GH26" : targetUnlockRole === "seller" ? "e.g. SEL-1234" : "e.g. RDR-1234"}
+                            placeholderTextColor={colors.muted}
+                            autoCapitalize="characters"
+                            autoCorrect={false}
+                            style={{
+                                backgroundColor: colors.card,
+                                color: colors.foreground,
+                                padding: 16,
+                                borderRadius: 14,
+                                marginBottom: spacing[5],
+                                borderWidth: 1.5,
+                                borderColor: colors.border,
+                                fontSize: 18,
+                                fontWeight: "700",
+                                letterSpacing: 1.5,
+                            }}
+                        />
+
+                        <TouchableOpacity
+                            onPress={handleUnlockRoleWithCode}
+                            disabled={isUnlocking}
+                            style={{
+                                backgroundColor: colors.primary,
+                                padding: 16,
+                                borderRadius: 14,
+                                alignItems: "center",
+                            }}
+                        >
+                            {isUnlocking ? (
+                                <ActivityIndicator color="#fff" />
+                            ) : (
+                                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
+                                    Verify Code & Unlock Portal
+                                </Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
+
+            {/* My Activation Codes Modal */}
+            <Modal
+                visible={isCodesViewModalVisible}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setIsCodesViewModalVisible(false)}
+            >
+                <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", paddingHorizontal: spacing[5] }}>
+                    <View style={{ backgroundColor: colors.background, borderRadius: 24, padding: spacing[6], shadowColor: "#000", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.2, shadowRadius: 32, elevation: 20 }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing[4] }}>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                                <Ionicons name="key" size={22} color={colors.primary} />
+                                <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: "700" }}>
+                                    My Activation Codes
+                                </Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setIsCodesViewModalVisible(false)}>
+                                <Ionicons name="close" size={24} color={colors.muted} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={{ color: colors.muted, fontSize: 13, marginBottom: spacing[4], lineHeight: 18 }}>
+                            These are the unique portal codes generated for your account. Keep them safe to switch roles anytime.
+                        </Text>
+
+                        {/* Buyer Status */}
+                        <View style={{ backgroundColor: colors.card, padding: spacing[3], borderRadius: 12, marginBottom: spacing[2], borderWidth: 1, borderColor: colors.border }}>
+                            <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700", textTransform: "uppercase" }}>🛒 Buyer Portal</Text>
+                            <Text style={{ color: colors.success, fontSize: 14, fontWeight: "700", marginTop: 2 }}>Enabled (No code needed)</Text>
+                        </View>
+
+                        {/* Seller Code */}
+                        <View style={{ backgroundColor: colors.card, padding: spacing[3], borderRadius: 12, marginBottom: spacing[2], borderWidth: 1, borderColor: colors.border }}>
+                            <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700", textTransform: "uppercase" }}>💼 Seller Portal Code</Text>
+                            <Text style={{ color: colors.primary, fontSize: 18, fontWeight: "800", letterSpacing: 1.5, marginTop: 2 }}>
+                                {user?.sellerCode || "Not generated yet"}
+                            </Text>
+                        </View>
+
+                        {/* Rider Code */}
+                        <View style={{ backgroundColor: colors.card, padding: spacing[3], borderRadius: 12, marginBottom: spacing[4], borderWidth: 1, borderColor: colors.border }}>
+                            <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700", textTransform: "uppercase" }}>🏍️ Dispatch Rider Code</Text>
+                            <Text style={{ color: colors.primary, fontSize: 18, fontWeight: "800", letterSpacing: 1.5, marginTop: 2 }}>
+                                {user?.riderCode || "Not generated yet"}
+                            </Text>
+                        </View>
+
+                        <TouchableOpacity
+                            onPress={() => setIsCodesViewModalVisible(false)}
+                            style={{ backgroundColor: colors.primary, padding: 14, borderRadius: 12, alignItems: "center" }}
+                        >
+                            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Done</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
 
             {/* Account Verification Modal */}
             <Modal

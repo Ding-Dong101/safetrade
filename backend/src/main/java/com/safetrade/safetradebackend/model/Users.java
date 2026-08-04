@@ -64,10 +64,22 @@ public class Users {
     private String idNumber;
 
     @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean isSellerApproved = false;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
     private Boolean isRiderApproved = false;
 
     @Column(nullable = false, columnDefinition = "boolean default false")
     private Boolean isPostApproved = false;
+
+    @Column
+    private String sellerCode;
+
+    @Column
+    private String riderCode;
+
+    @Column
+    private String postCode;
 
     @ManyToMany
     private List<Trades> trades;

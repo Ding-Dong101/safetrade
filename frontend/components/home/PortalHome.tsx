@@ -5,7 +5,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { useTrades } from "@/hooks/useTrades";
-import PortalSwitcher from "@/components/home/PortalSwitcher";
 import BalanceCard from "@/components/home/BalanceCard";
 import BalanceCardSkeleton from "@/components/home/BalanceCardSkeleton";
 import TradeCard from "@/components/trade/TradeCard";
@@ -234,7 +233,20 @@ const PortalHome = ({ role }: PortalHomeProps) => {
                         <Text style={{ color: "#ffffff", fontSize: 28, fontWeight: "800" }}>
                             Hello {user?.firstName ?? MOCK_USER.name},
                         </Text>
-                        <PortalSwitcher role={role} />
+                        <View
+                            style={{
+                                backgroundColor: "rgba(255, 255, 255, 0.18)",
+                                paddingHorizontal: 12,
+                                paddingVertical: 5,
+                                borderRadius: 16,
+                                borderWidth: 1,
+                                borderColor: "rgba(255, 255, 255, 0.25)",
+                            }}
+                        >
+                            <Text style={{ color: "#ffffff", fontSize: 12, fontWeight: "700" }}>
+                                {role === "seller" ? "Seller Portal" : "Buyer Portal"}
+                            </Text>
+                        </View>
                     </View>
                     <BalanceCardSkeleton />
                 </View>
@@ -295,7 +307,20 @@ const PortalHome = ({ role }: PortalHomeProps) => {
                         <Text style={{ color: "#ffffff", fontSize: 28, fontWeight: "800" }}>
                             Hello {user?.firstName ?? MOCK_USER.name},
                         </Text>
-                        <PortalSwitcher role={role} />
+                        <View
+                            style={{
+                                backgroundColor: "rgba(255, 255, 255, 0.18)",
+                                paddingHorizontal: 12,
+                                paddingVertical: 5,
+                                borderRadius: 16,
+                                borderWidth: 1,
+                                borderColor: "rgba(255, 255, 255, 0.25)",
+                            }}
+                        >
+                            <Text style={{ color: "#ffffff", fontSize: 12, fontWeight: "700" }}>
+                                {role === "seller" ? "Seller Portal" : "Buyer Portal"}
+                            </Text>
+                        </View>
                     </View>
 
                     <BalanceCard
