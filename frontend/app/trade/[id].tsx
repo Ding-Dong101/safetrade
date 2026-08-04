@@ -92,11 +92,13 @@ export default function TradeDetails() {
 
     useEffect(() => {
         if (!selectedTrade) return;
-        if (selectedTrade.buyerId) {
-            getUserById(selectedTrade.buyerId).then((u) => setBuyerName(u?.username ?? selectedTrade.buyerId));
+        const bid = selectedTrade.buyerId;
+        if (bid) {
+            getUserById(bid).then((u) => setBuyerName(u?.username ?? bid));
         }
-        if (selectedTrade.sellerId) {
-            getUserById(selectedTrade.sellerId).then((u) => setSellerName(u?.username ?? selectedTrade.sellerId));
+        const sid = selectedTrade.sellerId;
+        if (sid) {
+            getUserById(sid).then((u) => setSellerName(u?.username ?? sid));
         }
     }, [selectedTrade?.buyerId, selectedTrade?.sellerId]);
 
@@ -557,7 +559,7 @@ export default function TradeDetails() {
             <ShareDealModal
                 visible={isShareModalOpen}
                 onClose={() => setIsShareModalOpen(false)}
-                title={selectedTrade.title}
+                title={selectedTrade.title || "SafeTrade Item"}
                 price={selectedTrade.price}
                 tradeCode={(selectedTrade as any).tradeCode ?? selectedTrade.id}
             />

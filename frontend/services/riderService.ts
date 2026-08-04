@@ -25,9 +25,9 @@ const toRiderJob = (trade: Trade): RiderJob => ({
     id: trade.id,
     tradeId: trade.id,
     tradeCode: trade.tradeCode,
-    title: trade.title,
-    buyerName: trade.buyerId,
-    sellerName: trade.sellerId,
+    title: trade.title || "SafeTrade Package",
+    buyerName: trade.buyerId || "Buyer",
+    sellerName: trade.sellerId || "Seller",
     pickupLocation: trade.pickupLocation || "Seller location",
     dropoffLocation: "SafeTrade Post",
     status: toJobStatus(trade),
@@ -58,8 +58,8 @@ export const getAvailableJobs = async (): Promise<AvailableJob[]> => {
             id: trade.id,
             tradeId: trade.id,
             tradeCode: trade.tradeCode,
-            title: trade.title,
-            buyerName: trade.buyerId,
+            title: trade.title || "SafeTrade Package",
+            buyerName: trade.buyerId || "Buyer",
             pickupLocation: trade.pickupLocation || "Seller location",
             dropoffLocation: "SafeTrade Post",
         }));
@@ -127,13 +127,12 @@ export const riderAcceptDelivery = async (tradeId: string): Promise<Trade> => {
     return data;
 };
 
-// Rider looks up trade + buyer info before confirming drop-off
 export const getTradeForDropoff = async (
     tradeId: string
 ): Promise<{ trade: Trade; buyerUsername: string }> => {
     const { data } = await api.get<Trade>(`/trades/${tradeId}`);
-    const buyer = await getUserById(data.buyerId);
-    return { trade: data, buyerUsername: buyer?.username ?? data.buyerId };
+    const buyer = data.buyerId ? await getUserById(data.buyerId) : null;
+    return { trade: data, buyerUsername: buyer?.username ?? data.buyerId ?? "Buyer" };
 };
 
 // Rider confirms drop-off — this triggers automatic escrow release to the seller

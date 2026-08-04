@@ -10,6 +10,10 @@ export interface TradePreview {
     price: number;
     sellerName: string;
     status: string;
+    buyerId?: string;
+    sellerId?: string;
+    sourceUrl?: string;
+    platform?: string;
     itemPhotoBase64?: string;
     pickupLocation?: string;
     createdAt?: string;
@@ -86,6 +90,26 @@ export const getTradeById = async (id: string): Promise<Trade | undefined> => {
 };
 export const createTrade = async (
     payload: CreateTradePayload
+): Promise<{ trade: Trade; tradeCode: string; riderCode: string }> => {
+    const { data } = await api.post<Trade>("/trades/", payload);
+    return {
+        trade: data,
+        tradeCode: (data as any).tradeCode,
+        riderCode: (data as any).riderCode,
+    };
+};
+
+export const createBuyerTrade = async (
+    payload: {
+        title: string;
+        price: number;
+        buyerId: string;
+        description?: string;
+        pickupLocation?: string;
+        sourceUrl?: string;
+        platform?: string;
+        itemPhotoBase64?: string;
+    }
 ): Promise<{ trade: Trade; tradeCode: string; riderCode: string }> => {
     const { data } = await api.post<Trade>("/trades/", payload);
     return {

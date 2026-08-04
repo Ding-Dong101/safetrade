@@ -279,7 +279,7 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
             <ShareDealModal
                 visible={isShareModalOpen}
                 onClose={() => setIsShareModalOpen(false)}
-                title={trade.title}
+                title={trade.title || "SafeTrade Item"}
                 price={trade.price}
                 tradeCode={trade.tradeCode ?? trade.id}
             />

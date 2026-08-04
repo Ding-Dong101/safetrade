@@ -39,8 +39,13 @@ public class Trades {
     @Column(nullable = true)
     private String buyerId;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String sellerId;
+
+    @Column(columnDefinition = "TEXT")
+    private String sourceUrl;
+
+    private String platform;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

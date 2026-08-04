@@ -15,8 +15,10 @@ export interface Trade {
     tradeCode?: string;
     riderCode?: string;
     pickupLocation?: string;
-    buyerId: string;
-    sellerId: string;
+    buyerId?: string;
+    sellerId?: string;
+    sourceUrl?: string;
+    platform?: string;
     price: number;
     status: TradeStatus;
     title?: string;
@@ -38,11 +40,26 @@ export interface CreateTradePayload {
     description?: string;
     pickupLocation?: string;
     price: number;
-    sellerId: string;
+    sellerId?: string;
+    buyerId?: string;
+    sourceUrl?: string;
+    platform?: string;
+    itemPhotoBase64?: string;
+}
+
+export interface CreateBuyerTradePayload {
+    title: string;
+    description?: string;
+    pickupLocation?: string;
+    price: number;
+    buyerId: string;
+    sellerId?: string;
+    sourceUrl?: string;
+    platform?: string;
     itemPhotoBase64?: string;
 }
 
 export interface UpdateTradeStatusPayload {
     tradeId: string;
     status: TradeStatus;
-}
+}

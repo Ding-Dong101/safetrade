@@ -33,20 +33,20 @@ public class TradesController {
         this.notificationService = notificationService;
     }
 
-    /** Automatically runs every 30 seconds to delete trades that have no buyer and are >5 minutes old. */
-    @Scheduled(fixedRate = 30000)
+    /** Automatically runs every 5 minutes to clean up stale unjoined trades older than 24 hours. */
+    @Scheduled(fixedRate = 300000)
     public void cleanUpExpiredTrades() {
         try {
-            LocalDateTime cutoff = LocalDateTime.now().minusMinutes(5);
+            LocalDateTime cutoff = LocalDateTime.now().minusHours(24);
             List<Trades> allTrades = tradesRepository.findAll();
             List<Trades> expired = allTrades.stream()
                     .filter(t -> (t.getBuyerId() == null || t.getBuyerId().isBlank())
+                            && (t.getSellerId() == null || t.getSellerId().isBlank())
                             && t.getCreatedAt() != null
                             && t.getCreatedAt().isBefore(cutoff))
                     .collect(Collectors.toList());
             if (!expired.isEmpty()) {
                 tradesRepository.deleteAll(expired);
-                System.out.println("[Trade Cleanup] Deleted " + expired.size() + " trade(s) created > 5 mins ago with no buyer.");
             }
         } catch (Exception e) {
             System.err.println("[Trade Cleanup Error] " + e.getMessage());
@@ -113,11 +113,16 @@ public class TradesController {
     @PostMapping("/")
     public ResponseEntity<?> create(@RequestBody Trades request,
                                     @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        if (request.getTitle() == null || request.getPrice() == null || request.getSellerId() == null) {
-            return ResponseEntity.badRequest().body("title, price, and sellerId are required");
+        if (request.getTitle() == null || request.getPrice() == null) {
+            return ResponseEntity.badRequest().body("title and price are required");
         }
 
+        String sellerId = request.getSellerId();
         String buyerId = request.getBuyerId();
+
+        if ((sellerId == null || sellerId.isBlank()) && (buyerId == null || buyerId.isBlank())) {
+            return ResponseEntity.badRequest().body("Either sellerId or buyerId must be provided");
+        }
 
         Trades trade = Trades.builder()
                 .title(request.getTitle())
@@ -125,7 +130,9 @@ public class TradesController {
                 .pickupLocation(request.getPickupLocation())
                 .price(request.getPrice())
                 .buyerId(buyerId)
-                .sellerId(request.getSellerId())
+                .sellerId(sellerId)
+                .sourceUrl(request.getSourceUrl())
+                .platform(request.getPlatform())
                 .itemPhotoBase64(request.getItemPhotoBase64())
                 .status(TradeStatus.PENDING)
                 .createdAt(LocalDateTime.now())
@@ -135,7 +142,9 @@ public class TradesController {
 
         Trades saved = tradesRepository.save(trade);
 
-        sendNotification(request.getSellerId(), "NEW_TRADE", "A new trade has been initiated with you.");
+        if (sellerId != null && !sellerId.isBlank()) {
+            sendNotification(sellerId, "NEW_TRADE", "A new trade has been initiated with you.");
+        }
 
         return ResponseEntity.status(201).body(saved);
     }
@@ -173,6 +182,10 @@ public class TradesController {
         preview.put("itemPhotoBase64", trade.getItemPhotoBase64());
         preview.put("pickupLocation", trade.getPickupLocation());
         preview.put("sellerName", sellerName);
+        preview.put("buyerId", trade.getBuyerId());
+        preview.put("sellerId", trade.getSellerId());
+        preview.put("sourceUrl", trade.getSourceUrl());
+        preview.put("platform", trade.getPlatform());
         preview.put("status", trade.getStatus());
         preview.put("createdAt", trade.getCreatedAt());
 
@@ -293,23 +306,35 @@ public class TradesController {
             return ResponseEntity.status(401).body("Not authenticated");
         }
 
-        Optional<Users> buyerOpt = usersRepository.findByUsername(auth.getName());
-        if (buyerOpt.isEmpty()) {
+        Optional<Users> userOpt = usersRepository.findByUsername(auth.getName());
+        if (userOpt.isEmpty()) {
             return ResponseEntity.status(401).body("User not found");
         }
 
-        String buyerId = buyerOpt.get().getId().toString();
+        String currentUserId = userOpt.get().getId().toString();
 
-        if (buyerId.equals(trade.getSellerId())) {
-            return ResponseEntity.badRequest().body("You cannot join your own trade as the buyer");
+        if (trade.getSellerId() == null || trade.getSellerId().isBlank()) {
+            if (currentUserId.equals(trade.getBuyerId())) {
+                return ResponseEntity.badRequest().body("You cannot join your own trade as the seller");
+            }
+            trade.setSellerId(currentUserId);
+            Trades saved = tradesRepository.save(trade);
+            sendNotification(trade.getBuyerId(), "TRADE_JOINED", "A seller has accepted your escrow trade invite.");
+            return ResponseEntity.ok(saved);
+        } else if (trade.getBuyerId() == null || trade.getBuyerId().isBlank()) {
+            if (currentUserId.equals(trade.getSellerId())) {
+                return ResponseEntity.badRequest().body("You cannot join your own trade as the buyer");
+            }
+            trade.setBuyerId(currentUserId);
+            Trades saved = tradesRepository.save(trade);
+            sendNotification(trade.getSellerId(), "TRADE_JOINED", "A buyer has joined your trade.");
+            return ResponseEntity.ok(saved);
+        } else {
+            if (currentUserId.equals(trade.getBuyerId()) || currentUserId.equals(trade.getSellerId())) {
+                return ResponseEntity.ok(trade);
+            }
+            return ResponseEntity.badRequest().body("This trade is already between two parties.");
         }
-
-        trade.setBuyerId(buyerId);
-        Trades saved = tradesRepository.save(trade);
-
-        sendNotification(trade.getSellerId(), "TRADE_JOINED", "A buyer has joined your trade.");
-
-        return ResponseEntity.ok(saved);
     }
 
     @PostMapping("/{id}/deposit")
