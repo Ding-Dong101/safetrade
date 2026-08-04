@@ -247,6 +247,7 @@ export default function MarketplaceInspectScreen() {
                 title: editableTitle.trim(),
                 price: priceNum,
                 buyerId: user.id,
+                sellerContact: sellerContact.trim() || undefined,
                 description: fullDescription,
                 pickupLocation: modeLabel,
                 sourceUrl: previewData?.url || "",

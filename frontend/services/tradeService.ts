@@ -104,6 +104,8 @@ export const createBuyerTrade = async (
         title: string;
         price: number;
         buyerId: string;
+        sellerId?: string;
+        sellerContact?: string;
         description?: string;
         pickupLocation?: string;
         sourceUrl?: string;
@@ -111,7 +113,11 @@ export const createBuyerTrade = async (
         itemPhotoBase64?: string;
     }
 ): Promise<{ trade: Trade; tradeCode: string; riderCode: string }> => {
-    const { data } = await api.post<Trade>("/trades/", payload);
+    const requestPayload = {
+        ...payload,
+        sellerId: payload.sellerId || (payload.sellerContact && payload.sellerContact.trim() ? payload.sellerContact.trim() : "PENDING_SELLER"),
+    };
+    const { data } = await api.post<Trade>("/trades/", requestPayload);
     return {
         trade: data,
         tradeCode: (data as any).tradeCode,

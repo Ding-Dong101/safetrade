@@ -313,7 +313,17 @@ public class TradesController {
 
         String currentUserId = userOpt.get().getId().toString();
 
-        if (trade.getSellerId() == null || trade.getSellerId().isBlank()) {
+        boolean isSellerOpen = (trade.getSellerId() == null || trade.getSellerId().isBlank() ||
+                "PENDING_SELLER".equalsIgnoreCase(trade.getSellerId()) ||
+                trade.getSellerId().toUpperCase().startsWith("PENDING") ||
+                trade.getSellerId().toUpperCase().startsWith("EXTERNAL") ||
+                !trade.getSellerId().matches("^[0-9a-fA-F-]{36}$"));
+
+        boolean isBuyerOpen = (trade.getBuyerId() == null || trade.getBuyerId().isBlank() ||
+                "PENDING_BUYER".equalsIgnoreCase(trade.getBuyerId()) ||
+                trade.getBuyerId().toUpperCase().startsWith("PENDING"));
+
+        if (isSellerOpen) {
             if (currentUserId.equals(trade.getBuyerId())) {
                 return ResponseEntity.badRequest().body("You cannot join your own trade as the seller");
             }
@@ -321,7 +331,7 @@ public class TradesController {
             Trades saved = tradesRepository.save(trade);
             sendNotification(trade.getBuyerId(), "TRADE_JOINED", "A seller has accepted your escrow trade invite.");
             return ResponseEntity.ok(saved);
-        } else if (trade.getBuyerId() == null || trade.getBuyerId().isBlank()) {
+        } else if (isBuyerOpen) {
             if (currentUserId.equals(trade.getSellerId())) {
                 return ResponseEntity.badRequest().body("You cannot join your own trade as the buyer");
             }
