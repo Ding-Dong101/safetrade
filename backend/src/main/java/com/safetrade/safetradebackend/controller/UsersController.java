@@ -248,10 +248,8 @@ public class UsersController {
         user.setPaymentNetwork(bankCode);
 
         try {
-            java.util.Map<String, Object> paystackRes = escrowService.createTransferRecipient(name, accountNumber, bankCode);
-            if (paystackRes != null && Boolean.TRUE.equals(paystackRes.get("status"))) {
-                java.util.Map<String, Object> data = (java.util.Map<String, Object>) paystackRes.get("data");
-                String recipientCode = (String) data.get("recipient_code");
+            String recipientCode = escrowService.createTransferRecipient(name, accountNumber, bankCode);
+            if (recipientCode != null && !recipientCode.isBlank()) {
                 user.setPaystackRecipientCode(recipientCode);
             }
         } catch (Exception e) {

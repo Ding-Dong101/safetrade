@@ -60,6 +60,23 @@ public class EndpointsIntegrationTest {
         when(escrowService.fundEscrow(any(), any(), any())).thenReturn("mock_success");
         when(escrowService.verifyPayment(any())).thenReturn(true);
         when(escrowService.verifyTopUpPayment(any(), any())).thenReturn(100.0);
+        when(escrowService.initializePaystackTransaction(any(), any(), any(), any())).thenReturn(Map.of(
+                "status", true,
+                "data", Map.of(
+                        "authorization_url", "https://checkout.paystack.com/test",
+                        "access_code", "test_acc",
+                        "reference", "test_ref"
+                )
+        ));
+        when(escrowService.verifyPaystackTransaction(any())).thenReturn(Map.of(
+                "status", true,
+                "data", Map.of(
+                        "status", "success",
+                        "amount", 10000.0,
+                        "reference", "topup_10000_12345"
+                )
+        ));
+        when(escrowService.createTransferRecipient(any(), any(), any())).thenReturn("RCP_test123");
         when(escrowService.releaseFunds(any(), any(), any())).thenReturn("mock_success");
         when(escrowService.refundBuyer(any())).thenReturn("mock_success");
         doNothing().when(notificationService).sendPushNotification(any(), any(), any());
