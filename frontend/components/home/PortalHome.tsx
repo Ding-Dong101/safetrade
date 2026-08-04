@@ -419,7 +419,7 @@ const PortalHome = ({ role }: PortalHomeProps) => {
                                 }
                             />
                         }
-                        ListFooterComponent={<SafeTradeTrustCenter role={role} />}
+                        ListFooterComponent={activeTrades.length === 0 ? <SafeTradeTrustCenter role={role} /> : null}
                         contentContainerStyle={{
                             paddingHorizontal: spacing[5],
                             paddingBottom: insets.bottom + 140,
