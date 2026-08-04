@@ -34,7 +34,7 @@ const request = async <T = any>(
         if (response.status === 401 || response.status === 403) {
             console.warn(`[API Auth Expired/Forbidden] ${method} ${path} - Status: ${response.status}`);
         } else {
-            console.error(`[API Error] ${method} ${path} - Status: ${response.status}`, data);
+            console.warn(`[API Response Note] ${method} ${path} - Status: ${response.status}`, data);
         }
         // Stored token expired or was rejected — drop the session only on 401 Unauthorized
         if (response.status === 401 && token && !path.includes("/login") && !path.includes("/link-preview")) {

@@ -1,5 +1,7 @@
-import api from "@/services/api";
 import { getRepresentativeOnlineImage } from "@/utils/imageLookup";
+import { useAuthStore } from "@/store/authStore";
+
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://safetrade-or1w.onrender.com/api";
 
 export interface LinkPreviewData {
     url: string;
@@ -110,31 +112,7 @@ export const parseLink = async (inputUrl: string): Promise<LinkPreviewData> => {
         throw new Error("SafeTrade operates in Ghana. Please use listings from Jiji Ghana (jiji.com.gh).");
     }
 
-    // 1. Try Backend Scraper first
-    try {
-        const { data } = await api.post<LinkPreviewData>("/link-preview/parse", { url: cleanUrl });
-        if (data && !data.isSuccess && data.errorMessage) {
-            throw new Error(data.errorMessage);
-        }
-        if (data && (data.title || data.image || data.price)) {
-            const resolvedImg = cleanImageUrl(data.image, domain) || getRepresentativeOnlineImage(data.title);
-            return {
-                ...data,
-                image: resolvedImg,
-                sellerLocation: data.sellerLocation || "Greater Accra, Ghana",
-                currency: "GHS",
-                platform: data.platform || platform,
-                attributes: data.attributes || {},
-            };
-        }
-    } catch (backendErr: any) {
-        if (backendErr.message && backendErr.message.includes("SafeTrade operates in Ghana")) {
-            throw backendErr;
-        }
-        console.log("[LinkService] Using client fallback parser for marketplace link.");
-    }
-
-    // 2. Direct client metadata parse
+    // 1. Try Direct Client Scraping First
     try {
         const res = await fetch(cleanUrl, {
             method: "GET",
@@ -203,24 +181,56 @@ export const parseLink = async (inputUrl: string): Promise<LinkPreviewData> => {
             const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, "")) : null;
             const sellerContact = phoneMatch ? phoneMatch[0] : null;
 
-            return {
-                url: cleanUrl,
-                title: title || `Item on ${platform}`,
-                description: description || `Listing on ${platform}`,
-                image,
-                price: price && !isNaN(price) ? price : null,
-                listedPrice: price && !isNaN(price) ? price : null,
-                sellerContact,
-                sellerLocation,
-                attributes,
-                currency: "GHS",
-                platform,
-                domain,
-                isSuccess: true,
-            };
+            if (title || price || image) {
+                return {
+                    url: cleanUrl,
+                    title: title || `Item on ${platform}`,
+                    description: description || `Listing on ${platform}`,
+                    image,
+                    price: price && !isNaN(price) ? price : null,
+                    listedPrice: price && !isNaN(price) ? price : null,
+                    sellerContact,
+                    sellerLocation,
+                    attributes,
+                    currency: "GHS",
+                    platform,
+                    domain,
+                    isSuccess: true,
+                };
+            }
         }
     } catch (clientErr) {
-        // Direct fetch skipped
+        // Fall through to backend or URL extraction
+    }
+
+    // 2. Try Backend Scraper (Silent probe)
+    try {
+        const token = useAuthStore.getState().token;
+        const resp = await fetch(`${BASE_URL}/link-preview/parse`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ url: cleanUrl }),
+        });
+
+        if (resp.ok) {
+            const data: LinkPreviewData = await resp.json();
+            if (data && (data.title || data.image || data.price)) {
+                const resolvedImg = cleanImageUrl(data.image, domain) || getRepresentativeOnlineImage(data.title);
+                return {
+                    ...data,
+                    image: resolvedImg,
+                    sellerLocation: data.sellerLocation || "Greater Accra, Ghana",
+                    currency: "GHS",
+                    platform: data.platform || platform,
+                    attributes: data.attributes || {},
+                };
+            }
+        }
+    } catch (backendErr) {
+        // Backend offline or route pending deployment
     }
 
     // 3. Fallback extraction
