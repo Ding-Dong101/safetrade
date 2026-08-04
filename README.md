@@ -5,6 +5,7 @@
 ---
 
 ## 📑 Table of Contents
+0. [📚 Feature Documentation Library (`docs/`)](./docs/README.md)
 1. [Overview & Problem Statement](#-overview--problem-statement)
 2. [Key Capabilities & Innovations](#-key-capabilities--innovations)
 3. [Architecture & Technology Stack](#-architecture--technology-stack)
