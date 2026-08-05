@@ -39,8 +39,8 @@ public class SecurityConfig {
                     "/api/v2/users/register", "/api/v2/users/login",
                     "/api/users/register", "/api/users/login",
                     "/api/auth/register", "/api/auth/login",
-                    "/api/auth/otp/send", "/api/auth/otp/verify",
-                    "/api/users/otp/send", "/api/users/otp/verify",
+                    "/api/auth/otp/**", "/api/users/otp/**", "/api/v2/users/otp/**",
+                    "/api/otp/**",
                     "/api/webhooks/**", "/api/v2/webhooks/**",
                     "/api/link-preview/**", "/api/v2/link-preview/**",
                     "/error", "/ws/**"

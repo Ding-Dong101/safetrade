@@ -90,23 +90,25 @@ export default function SignUp() {
         const nextErrors: Record<string, string> = {};
         if (!firstName.trim()) nextErrors.firstName = "Required";
         if (!lastName.trim()) nextErrors.lastName = "Required";
-        if (!emailOrPhone.trim()) nextErrors.emailOrPhone = "Email or phone is required";
+        
+        const cleanEmail = emailOrPhone.trim().toLowerCase();
+        if (!cleanEmail) {
+            nextErrors.emailOrPhone = "Email address is required";
+        } else if (!cleanEmail.includes("@") || !cleanEmail.includes(".")) {
+            nextErrors.emailOrPhone = "Please enter a valid email address";
+        }
+
         if (!username.trim()) nextErrors.username = "Username is required";
         if (password.length < 6) nextErrors.password = "At least 6 characters";
         setErrors(nextErrors);
         if (Object.keys(nextErrors).length > 0) return;
 
-        const isEmail = emailOrPhone.includes("@");
-        if (!isEmail) {
-            // Phone-only accounts skip OTP and go straight to registration
-            await doRegister();
-            return;
-        }
-
-        // Email provided — send OTP first
+        // Step 1: Send verification code to email BEFORE creating account
         try {
             setIsSendingOtp(true);
-            await sendSignupOtp(emailOrPhone.trim().toLowerCase());
+            setOtpError("");
+            setOtpValue("");
+            await sendSignupOtp(cleanEmail);
             startCooldown();
             showModal();
         } catch (err: any) {
@@ -122,12 +124,13 @@ export default function SignUp() {
 
     const handleResendOtp = async () => {
         if (resendCooldown > 0) return;
+        const cleanEmail = emailOrPhone.trim().toLowerCase();
         try {
             setIsSendingOtp(true);
             setOtpError("");
-            await sendSignupOtp(emailOrPhone.trim().toLowerCase());
+            await sendSignupOtp(cleanEmail);
             startCooldown();
-            Toast.show({ type: "success", text1: "Code Resent", text2: "A new code was sent to your email." });
+            Toast.show({ type: "success", text1: "Code Resent", text2: "A new verification code was sent to " + cleanEmail });
         } catch (err: any) {
             setOtpError("Failed to resend code. Please try again.");
         } finally {
@@ -140,17 +143,20 @@ export default function SignUp() {
             setOtpError("Please enter the 6-digit code.");
             return;
         }
+        const cleanEmail = emailOrPhone.trim().toLowerCase();
         try {
             setIsVerifyingOtp(true);
             setOtpError("");
-            await verifySignupOtp(emailOrPhone.trim().toLowerCase(), otpValue.trim());
+            // Step 2: Verify the OTP code
+            await verifySignupOtp(cleanEmail, otpValue.trim());
             hideModal();
+            // Step 3: Once verified, create the account and generate role codes
             await doRegister();
         } catch (err: any) {
             const msg =
                 typeof err?.response?.data?.error === "string"
                     ? err.response.data.error
-                    : err?.message ?? "Invalid or expired code. Please try again.";
+                    : err?.message ?? "Invalid or expired verification code. Please try again.";
             setOtpError(msg);
         } finally {
             setIsVerifyingOtp(false);
@@ -158,37 +164,40 @@ export default function SignUp() {
     };
 
     const doRegister = async () => {
-        const isEmail = emailOrPhone.includes("@");
+        const cleanEmail = emailOrPhone.trim().toLowerCase();
         const result = await register({
             firstName: firstName.trim(),
             lastName: lastName.trim(),
             username: username.trim(),
-            email: isEmail ? emailOrPhone.trim() : "",
-            phone: isEmail ? undefined : emailOrPhone.trim(),
+            email: cleanEmail,
             password,
             optedRole,
         });
 
         if (result.success) {
             const returnedUser = (result as any).user;
-            const hasRoleCodes = optedRole !== "buyer" || returnedUser?.sellerCode || returnedUser?.riderCode;
+            const hasSpecialRole = optedRole === "seller" || optedRole === "rider" || optedRole === "both";
 
-            if (hasRoleCodes) {
+            if (hasSpecialRole) {
+                // Display generated role activation codes to user
                 setAssignedSellerCode(returnedUser?.sellerCode ?? (optedRole === "seller" || optedRole === "both" ? "SEL-ACTIVE" : null));
                 setAssignedRiderCode(returnedUser?.riderCode ?? (optedRole === "rider" || optedRole === "both" ? "RDR-ACTIVE" : null));
                 setCredentialsModalVisible(true);
             } else {
                 Toast.show({
                     type: "success",
-                    text1: "Account Created",
-                    text2: "You can now log in with your details.",
+                    text1: "Account Verified & Created",
+                    text2: "You can now log in with your credentials.",
                     onHide: () => router.replace("/login"),
                 });
+                setTimeout(() => {
+                    router.replace("/login");
+                }, 1500);
             }
         } else {
             Toast.show({
                 type: "error",
-                text1: "Sign Up Failed",
+                text1: "Registration Failed",
                 text2: result.error,
             });
         }
@@ -293,10 +302,10 @@ export default function SignUp() {
                         </View>
 
                         <Input
-                            label="Email / Phone Number"
+                            label="Email Address"
                             value={emailOrPhone}
                             onChangeText={setEmailOrPhone}
-                            placeholder="e.g. john@email.com or 0241234567"
+                            placeholder="e.g. name@example.com"
                             autoCapitalize="none"
                             autoCorrect={false}
                             keyboardType="email-address"

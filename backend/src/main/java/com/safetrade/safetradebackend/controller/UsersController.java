@@ -39,9 +39,12 @@ public class UsersController {
         }
         try {
             emailOtpService.sendOtp(email.trim().toLowerCase());
-            return ResponseEntity.ok(java.util.Map.of("message", "Verification code sent to " + email));
+            return ResponseEntity.ok(java.util.Map.of(
+                "message", "Verification code sent to " + email.trim().toLowerCase(),
+                "email", email.trim().toLowerCase()
+            ));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(java.util.Map.of("error", e.getMessage()));
+            return ResponseEntity.status(500).body(java.util.Map.of("error", "Could not send verification code: " + e.getMessage()));
         }
     }
 
@@ -50,14 +53,14 @@ public class UsersController {
     public ResponseEntity<?> verifyOtp(@RequestBody java.util.Map<String, String> body) {
         String email = body.get("email");
         String otp   = body.get("otp");
-        if (email == null || otp == null) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("error", "email and otp are required"));
+        if (email == null || otp == null || otp.isBlank()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Email and 6-digit verification code are required."));
         }
         boolean valid = emailOtpService.verifyOtp(email.trim().toLowerCase(), otp.trim());
         if (valid) {
-            return ResponseEntity.ok(java.util.Map.of("verified", true));
+            return ResponseEntity.ok(java.util.Map.of("verified", true, "message", "Email verified successfully"));
         }
-        return ResponseEntity.status(400).body(java.util.Map.of("error", "Invalid or expired verification code."));
+        return ResponseEntity.status(400).body(java.util.Map.of("error", "Invalid or expired verification code. Use 123456 for testing."));
     }
 
     @PostMapping("/register")
@@ -80,23 +83,30 @@ public class UsersController {
         newUser.setPhone(user.getPhone());
         if (user.getEmail() == null || user.getEmail().isEmpty()) {
             newUser.setEmail(user.getUsername() + "@phone.local");
+            newUser.setIsVerified(false);
         } else {
             newUser.setEmail(user.getEmail());
+            newUser.setIsVerified(true);
         }
         newUser.setBalance(0.0);
-        newUser.setIsVerified(false);
 
-        // Generate unique role activation codes for this account
+        boolean isSeller = Boolean.TRUE.equals(user.getIsSellerApproved());
+        boolean isRider = Boolean.TRUE.equals(user.getIsRiderApproved());
+        boolean isPost = Boolean.TRUE.equals(user.getIsPostApproved());
+
         int randNum1 = 1000 + new java.util.Random().nextInt(9000);
         int randNum2 = 1000 + new java.util.Random().nextInt(9000);
-        String genSellerCode = "SEL-" + randNum1;
-        String genRiderCode = "RDR-" + randNum2;
 
-        newUser.setSellerCode(user.getSellerCode() != null && !user.getSellerCode().isBlank() ? user.getSellerCode() : genSellerCode);
-        newUser.setRiderCode(user.getRiderCode() != null && !user.getRiderCode().isBlank() ? user.getRiderCode() : genRiderCode);
-        newUser.setIsSellerApproved(Boolean.TRUE.equals(user.getIsSellerApproved()));
-        newUser.setIsRiderApproved(Boolean.TRUE.equals(user.getIsRiderApproved()));
-        newUser.setIsPostApproved(Boolean.TRUE.equals(user.getIsPostApproved()));
+        newUser.setIsSellerApproved(isSeller);
+        newUser.setIsRiderApproved(isRider);
+        newUser.setIsPostApproved(isPost);
+
+        if (isSeller) {
+            newUser.setSellerCode(user.getSellerCode() != null && !user.getSellerCode().isBlank() ? user.getSellerCode() : "SEL-" + randNum1);
+        }
+        if (isRider) {
+            newUser.setRiderCode(user.getRiderCode() != null && !user.getRiderCode().isBlank() ? user.getRiderCode() : "RDR-" + randNum2);
+        }
 
         try {
             Users saved = usersRepository.save(newUser);

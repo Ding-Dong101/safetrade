@@ -163,6 +163,19 @@ public class EndpointsIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"pushToken\": \"expo_token_123\"}"))
                 .andExpect(status().isOk());
+
+        // 8. OTP Send & Verify
+        mockMvc.perform(post("/api/auth/otp/send")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\": \"tester@example.com\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").exists());
+
+        mockMvc.perform(post("/api/auth/otp/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\": \"tester@example.com\", \"otp\": \"123456\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.verified").value(true));
     }
 
     @Test

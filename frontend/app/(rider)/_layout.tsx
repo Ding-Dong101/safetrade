@@ -9,6 +9,7 @@ export default function RiderLayout() {
                 { name: "messages", title: "Messages", icon: "chatbox-ellipses" },
                 { name: "settings", title: "Settings", icon: "settings" },
             ]}
+            hiddenScreens={["dropoff"]}
         />
     );
 }

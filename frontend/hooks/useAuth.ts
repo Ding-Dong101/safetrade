@@ -25,8 +25,8 @@ export const useAuth = () => {
     const handleRegister = async (credentials: RegisterCredentials) => {
         try {
             setLoading(true);
-            await register(credentials);
-            return { success: true };
+            const response = await register(credentials);
+            return { success: true, user: response.user };
         } catch (error: any) {
             console.error("Registration Exception:", error, error?.response?.data);
             return {

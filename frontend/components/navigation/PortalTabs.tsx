@@ -17,6 +17,7 @@ export interface PortalTab {
 interface PortalTabsProps {
     tabs: PortalTab[];
     role?: Role;
+    hiddenScreens?: string[];
 }
 
 // Portal order used for edge swipes: swiping past the first/last tab moves to
@@ -53,7 +54,7 @@ const TabIcon = ({
     );
 };
 
-const PortalTabs = ({ tabs, role }: PortalTabsProps) => {
+const PortalTabs = ({ tabs, role, hiddenScreens }: PortalTabsProps) => {
     const insets = useSafeAreaInsets();
     const { colors, components } = useTheme();
     const router = useRouter();
@@ -155,6 +156,15 @@ const PortalTabs = ({ tabs, role }: PortalTabsProps) => {
                             tabBarIcon: ({ focused }) => (
                                 <TabIcon focused={focused} name={tab.icon} />
                             ),
+                        }}
+                    />
+                ))}
+                {hiddenScreens?.map((screenName) => (
+                    <Tabs.Screen
+                        key={screenName}
+                        name={screenName}
+                        options={{
+                            href: null,
                         }}
                     />
                 ))}
