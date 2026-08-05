@@ -176,12 +176,37 @@ export default function SignUp() {
 
         if (result.success) {
             const returnedUser = (result as any).user;
-            const hasSpecialRole = optedRole === "seller" || optedRole === "rider" || optedRole === "both";
+            const isSeller = optedRole === "seller" || optedRole === "both";
+            const isRider  = optedRole === "rider"  || optedRole === "both";
 
-            if (hasSpecialRole) {
-                // Display generated role activation codes to user
-                setAssignedSellerCode(returnedUser?.sellerCode ?? (optedRole === "seller" || optedRole === "both" ? "SEL-ACTIVE" : null));
-                setAssignedRiderCode(returnedUser?.riderCode ?? (optedRole === "rider" || optedRole === "both" ? "RDR-ACTIVE" : null));
+            // Show role codes modal only AFTER account is created
+            if (isSeller || isRider) {
+                setAssignedSellerCode(
+                    isSeller ? (returnedUser?.sellerCode ?? "SEL-ACTIVE") : null
+                );
+                setAssignedRiderCode(
+                    isRider ? (returnedUser?.riderCode ?? "RDR-ACTIVE") : null
+                );
+                setCredentialsModalVisible(true);
+            } else {
+                Toast.show({
+                    type: "success",
+                    text1: "Account Verified & Created",
+                    text2: "You can now log in with your credentials.",
+                    onHide: () => router.replace("/login"),
+                });
+                setTimeout(() => {
+                    router.replace("/login");
+                }, 1500);
+            }
+        } else {
+            Toast.show({
+                type: "error",
+                text1: "Registration Failed",
+                text2: result.error,
+            });
+        }
+    };
                 setCredentialsModalVisible(true);
             } else {
                 Toast.show({

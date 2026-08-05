@@ -8,6 +8,7 @@ import {
     Alert,
     ScrollView,
     RefreshControl,
+    Modal,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -41,6 +42,7 @@ export default function MarketplaceScreen() {
 
     const [inputUrl, setInputUrl] = useState("");
     const [isInspecting, setIsInspecting] = useState(false);
+    const [infoModalVisible, setInfoModalVisible] = useState(false);
 
     // Recent Protected Trades
     const [recentTrades, setRecentTrades] = useState<Trade[]>([]);
@@ -190,22 +192,39 @@ export default function MarketplaceScreen() {
                         backgroundColor: colors.card,
                     }}
                 >
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: spacing[2] }}>
-                        <View
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing[2] }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                            <View
+                                style={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: 14,
+                                    backgroundColor: `${colors.primary}20`,
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <Ionicons name="link" size={16} color={colors.primary} />
+                            </View>
+                            <Text style={{ color: colors.foreground, fontSize: 16, fontWeight: "800" }}>
+                                Paste Marketplace Listing Link
+                            </Text>
+                        </View>
+                        {/* Info icon — opens How SafeTrade Works popup */}
+                        <TouchableOpacity
+                            onPress={() => setInfoModalVisible(true)}
+                            activeOpacity={0.7}
                             style={{
                                 width: 28,
                                 height: 28,
                                 borderRadius: 14,
-                                backgroundColor: `${colors.primary}20`,
+                                backgroundColor: `${colors.primary}15`,
                                 alignItems: "center",
                                 justifyContent: "center",
                             }}
                         >
-                            <Ionicons name="link" size={16} color={colors.primary} />
-                        </View>
-                        <Text style={{ color: colors.foreground, fontSize: 16, fontWeight: "800" }}>
-                            Paste Marketplace Listing Link
-                        </Text>
+                            <Ionicons name="information-circle-outline" size={18} color={colors.primary} />
+                        </TouchableOpacity>
                     </View>
 
                     <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 18, marginBottom: spacing[3] }}>
@@ -307,83 +326,6 @@ export default function MarketplaceScreen() {
                     </View>
                 </Card>
 
-                {/* ── Visual 3-Step Trust Guide ── */}
-                <Card style={{ padding: spacing[4], marginBottom: spacing[4], backgroundColor: colors.cardAlt }}>
-                    <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "800", marginBottom: spacing[3] }}>
-                        How SafeTrade Escrow Works in Ghana 🛡️
-                    </Text>
-
-                    <View style={{ gap: spacing[3] }}>
-                        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
-                            <View
-                                style={{
-                                    width: 24,
-                                    height: 24,
-                                    borderRadius: 12,
-                                    backgroundColor: colors.primary,
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                <Text style={{ color: colors.background, fontSize: 12, fontWeight: "800" }}>1</Text>
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "700" }}>
-                                    Paste Jiji Ghana, Facebook, or Tonaton Link
-                                </Text>
-                                <Text style={{ color: colors.muted, fontSize: 12, marginTop: 1 }}>
-                                    SafeTrade fetches item photos, listed price in Cedis, and seller details.
-                                </Text>
-                            </View>
-                        </View>
-
-                        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
-                            <View
-                                style={{
-                                    width: 24,
-                                    height: 24,
-                                    borderRadius: 12,
-                                    backgroundColor: colors.primary,
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                <Text style={{ color: colors.background, fontSize: 12, fontWeight: "800" }}>2</Text>
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "700" }}>
-                                    Review Details & Set Agreed Cedis Price
-                                </Text>
-                                <Text style={{ color: colors.muted, fontSize: 12, marginTop: 1 }}>
-                                    Choose Hub, Rider, or Handover delivery. Deposit Cedis into escrow and send the Trade Code.
-                                </Text>
-                            </View>
-                        </View>
-
-                        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
-                            <View
-                                style={{
-                                    width: 24,
-                                    height: 24,
-                                    borderRadius: 12,
-                                    backgroundColor: colors.primary,
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                <Text style={{ color: colors.background, fontSize: 12, fontWeight: "800" }}>3</Text>
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "700" }}>
-                                    Inspect Package & Release Payment
-                                </Text>
-                                <Text style={{ color: colors.muted, fontSize: 12, marginTop: 1 }}>
-                                    Physically verify the product before giving your 5-digit release code.
-                                </Text>
-                            </View>
-                        </View>
-                    </View>
-                </Card>
 
                 {/* ── Recent Protected Trades Section ── */}
                 <View style={{ marginTop: spacing[2], marginBottom: spacing[4] }}>
@@ -460,6 +402,137 @@ export default function MarketplaceScreen() {
                     )}
                 </View>
             </ScrollView>
+
+            {/* ── How SafeTrade Works Info Modal ── */}
+            <Modal
+                visible={infoModalVisible}
+                transparent
+                animationType="fade"
+                statusBarTranslucent
+                onRequestClose={() => setInfoModalVisible(false)}
+            >
+                <TouchableOpacity
+                    activeOpacity={1}
+                    onPress={() => setInfoModalVisible(false)}
+                    style={{
+                        flex: 1,
+                        backgroundColor: "rgba(0,0,0,0.5)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        paddingHorizontal: spacing[5],
+                    }}
+                >
+                    <TouchableOpacity
+                        activeOpacity={1}
+                        onPress={() => {}}
+                        style={{
+                            backgroundColor: colors.background,
+                            borderRadius: 24,
+                            width: "100%",
+                            padding: spacing[6],
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 12 },
+                            shadowOpacity: 0.18,
+                            shadowRadius: 24,
+                            elevation: 16,
+                        }}
+                    >
+                        {/* Header */}
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing[4] }}>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                                <View
+                                    style={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: 18,
+                                        backgroundColor: `${colors.primary}20`,
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <Ionicons name="shield-checkmark" size={18} color={colors.primary} />
+                                </View>
+                                <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: "800" }}>
+                                    How SafeTrade Works 🛡️
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                onPress={() => setInfoModalVisible(false)}
+                                style={{
+                                    width: 30,
+                                    height: 30,
+                                    borderRadius: 15,
+                                    backgroundColor: colors.cardAlt,
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <Ionicons name="close" size={16} color={colors.muted} />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Steps */}
+                        <View style={{ gap: spacing[4] }}>
+                            {[
+                                {
+                                    step: "1",
+                                    title: "Paste Jiji Ghana, Facebook, or Tonaton Link",
+                                    desc: "SafeTrade fetches item photos, listed price in Cedis, and seller details.",
+                                },
+                                {
+                                    step: "2",
+                                    title: "Review Details & Set Agreed Cedis Price",
+                                    desc: "Choose Hub, Rider, or Handover delivery. Deposit Cedis into escrow and send the Trade Code.",
+                                },
+                                {
+                                    step: "3",
+                                    title: "Inspect Package & Release Payment",
+                                    desc: "Physically verify the product before giving your 5-digit release code.",
+                                },
+                            ].map(({ step, title, desc }) => (
+                                <View key={step} style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+                                    <View
+                                        style={{
+                                            width: 28,
+                                            height: 28,
+                                            borderRadius: 14,
+                                            backgroundColor: colors.primary,
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            marginTop: 1,
+                                        }}
+                                    >
+                                        <Text style={{ color: "#fff", fontSize: 13, fontWeight: "800" }}>{step}</Text>
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "700", marginBottom: 3 }}>
+                                            {title}
+                                        </Text>
+                                        <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 17 }}>
+                                            {desc}
+                                        </Text>
+                                    </View>
+                                </View>
+                            ))}
+                        </View>
+
+                        {/* Dismiss button */}
+                        <TouchableOpacity
+                            onPress={() => setInfoModalVisible(false)}
+                            activeOpacity={0.85}
+                            style={{
+                                marginTop: spacing[5],
+                                backgroundColor: `${colors.primary}15`,
+                                borderRadius: 12,
+                                paddingVertical: 12,
+                                alignItems: "center",
+                            }}
+                        >
+                            <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 14 }}>Got it</Text>
+                        </TouchableOpacity>
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            </Modal>
         </View>
     );
 }
