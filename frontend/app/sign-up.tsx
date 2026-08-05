@@ -207,26 +207,6 @@ export default function SignUp() {
             });
         }
     };
-                setCredentialsModalVisible(true);
-            } else {
-                Toast.show({
-                    type: "success",
-                    text1: "Account Verified & Created",
-                    text2: "You can now log in with your credentials.",
-                    onHide: () => router.replace("/login"),
-                });
-                setTimeout(() => {
-                    router.replace("/login");
-                }, 1500);
-            }
-        } else {
-            Toast.show({
-                type: "error",
-                text1: "Registration Failed",
-                text2: result.error,
-            });
-        }
-    };
 
     const rolesList = [
         {
