@@ -13,7 +13,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import ShareDealModal from "./ShareDealModal";
 import { useState } from "react";
-import { depositFunds, buyerConfirmRiderDelivery } from "@/services/tradeService";
+import { depositFunds } from "@/services/tradeService";
 
 interface TradeCardProps {
     trade: Trade;
@@ -24,7 +24,6 @@ interface TradeCardProps {
 const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
     const { colors, spacing } = useTheme();
     const [isActing, setIsActing] = useState(false);
-    const [riderCodeInput, setRiderCodeInput] = useState("");
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
     const handleDeposit = async () => {
@@ -45,23 +44,7 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
         }
     };
 
-    const handleConfirmRiderDelivery = async () => {
-        if (!riderCodeInput || riderCodeInput.length < 5) {
-            Alert.alert("Invalid Code", "Please enter the valid delivery code provided by the rider.");
-            return;
-        }
-        try {
-            setIsActing(true);
-            await buyerConfirmRiderDelivery(trade.id, riderCodeInput);
-            Alert.alert("Receipt Confirmed", "You have successfully received the item. Funds are now released to the seller.");
-            if (onPress) onPress(); // trigger a refresh or navigation
-        } catch (err: any) {
-            const msg = typeof err?.response?.data === "string" ? err.response.data : (err?.message ?? "Please try again.");
-            Alert.alert("Verification Failed", msg);
-        } finally {
-            setIsActing(false);
-        }
-    };
+
 
     const showDirectDeliveryCode = role === "buyer" && trade.status === "IN_TRANSIT" && trade.directDeliveryCode;
     const showPickupCode = role === "buyer" && trade.status === "AT_POST" && trade.releaseCode;
@@ -253,26 +236,7 @@ const TradeCard = ({ trade, role = "buyer", onPress }: TradeCardProps) => {
                 </View>
             )}
 
-            {role === "buyer" && trade.status === "IN_TRANSIT" && (
-                <View style={{ marginBottom: spacing[2], marginTop: spacing[2] }}>
-                    <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "600", marginBottom: spacing[1] }}>
-                        Direct Delivery Confirmation
-                    </Text>
-                    <Input
-                        placeholder="Enter rider's delivery code"
-                        value={riderCodeInput}
-                        onChangeText={setRiderCodeInput}
-                        autoCapitalize="none"
-                    />
-                    <View style={{ marginTop: spacing[1] }}>
-                        <Button 
-                            label="Confirm Receipt" 
-                            onPress={handleConfirmRiderDelivery} 
-                            isLoading={isActing} 
-                        />
-                    </View>
-                </View>
-            )}
+
 
             <TradeStatusBar status={trade.status} />
 

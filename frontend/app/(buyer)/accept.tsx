@@ -177,26 +177,26 @@ export default function AcceptTrade() {
                     <Card
                         style={{
                             padding: spacing[4],
-                            borderRadius: 18,
+                            borderRadius: 20,
                             flexDirection: "row",
                             alignItems: "center",
                             gap: 12,
-                            backgroundColor: `${colors.primary}10`,
-                            borderWidth: 1,
-                            borderColor: `${colors.primary}30`,
+                            backgroundColor: colors.card,
+                            borderWidth: 1.5,
+                            borderColor: `${colors.primary}35`,
                         }}
                     >
                         <View
                             style={{
                                 width: 44,
                                 height: 44,
-                                borderRadius: 12,
-                                backgroundColor: colors.primary,
+                                borderRadius: 14,
+                                backgroundColor: `${colors.primary}18`,
                                 alignItems: "center",
                                 justifyContent: "center",
                             }}
                         >
-                            <Ionicons name="storefront" size={22} color={colors.background} />
+                            <Ionicons name="storefront" size={22} color={colors.primary} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "700" }}>

@@ -90,20 +90,14 @@ export default function SignUp() {
         const nextErrors: Record<string, string> = {};
         if (!firstName.trim()) nextErrors.firstName = "Required";
         if (!lastName.trim()) nextErrors.lastName = "Required";
-        if (!emailOrPhone.trim()) nextErrors.emailOrPhone = "Email or phone is required";
+        if (!emailOrPhone.trim()) nextErrors.emailOrPhone = "Email address is required";
+        else if (!emailOrPhone.includes("@")) nextErrors.emailOrPhone = "A valid email is required to verify your account";
         if (!username.trim()) nextErrors.username = "Username is required";
         if (password.length < 6) nextErrors.password = "At least 6 characters";
         setErrors(nextErrors);
         if (Object.keys(nextErrors).length > 0) return;
 
-        const isEmail = emailOrPhone.includes("@");
-        if (!isEmail) {
-            // Phone-only accounts skip OTP and go straight to registration
-            await doRegister();
-            return;
-        }
-
-        // Email provided — send OTP first
+        // Always send OTP to email before creating account
         try {
             setIsSendingOtp(true);
             await sendSignupOtp(emailOrPhone.trim().toLowerCase());
@@ -143,8 +137,13 @@ export default function SignUp() {
         try {
             setIsVerifyingOtp(true);
             setOtpError("");
+            // Step 1: verify OTP with backend
             await verifySignupOtp(emailOrPhone.trim().toLowerCase(), otpValue.trim());
-            hideModal();
+            // Step 2: close OTP modal, then create account
+            setOtpModalVisible(false);
+            setOtpValue("");
+            setOtpError("");
+            // Step 3: create the account (role codes generated here if any)
             await doRegister();
         } catch (err: any) {
             const msg =
@@ -158,24 +157,29 @@ export default function SignUp() {
     };
 
     const doRegister = async () => {
-        const isEmail = emailOrPhone.includes("@");
+        // Email is now always required (OTP was verified against it)
         const result = await register({
             firstName: firstName.trim(),
             lastName: lastName.trim(),
             username: username.trim(),
-            email: isEmail ? emailOrPhone.trim() : "",
-            phone: isEmail ? undefined : emailOrPhone.trim(),
+            email: emailOrPhone.trim(),
             password,
             optedRole,
         });
 
         if (result.success) {
             const returnedUser = (result as any).user;
-            const hasRoleCodes = optedRole !== "buyer" || returnedUser?.sellerCode || returnedUser?.riderCode;
+            const isSeller = optedRole === "seller" || optedRole === "both";
+            const isRider  = optedRole === "rider"  || optedRole === "both";
 
-            if (hasRoleCodes) {
-                setAssignedSellerCode(returnedUser?.sellerCode ?? (optedRole === "seller" || optedRole === "both" ? "SEL-ACTIVE" : null));
-                setAssignedRiderCode(returnedUser?.riderCode ?? (optedRole === "rider" || optedRole === "both" ? "RDR-ACTIVE" : null));
+            // Show role codes modal only AFTER account is created
+            if (isSeller || isRider) {
+                setAssignedSellerCode(
+                    isSeller ? (returnedUser?.sellerCode ?? "SEL-ACTIVE") : null
+                );
+                setAssignedRiderCode(
+                    isRider ? (returnedUser?.riderCode ?? "RDR-ACTIVE") : null
+                );
                 setCredentialsModalVisible(true);
             } else {
                 Toast.show({
@@ -293,10 +297,10 @@ export default function SignUp() {
                         </View>
 
                         <Input
-                            label="Email / Phone Number"
+                            label="Email Address"
                             value={emailOrPhone}
                             onChangeText={setEmailOrPhone}
-                            placeholder="e.g. john@email.com or 0241234567"
+                            placeholder="e.g. john@email.com"
                             autoCapitalize="none"
                             autoCorrect={false}
                             keyboardType="email-address"
